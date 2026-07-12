@@ -4,14 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>戦慄迷宮 (Senritsu Meikyu)</title>
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Creepster&family=DotGothic16&display=swap" rel="stylesheet">
   
-  <!-- Firebase SDKs (Compat v10) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -25,7 +22,6 @@
       overflow: hidden;
       -webkit-user-select: none;
       user-select: none;
-      -webkit-tap-highlight-color: transparent;
     }
     .horror-title {
       font-family: 'Creepster', 'DotGothic16', cursive;
@@ -41,13 +37,13 @@
       animation: heartBeat 0.8s infinite alternate;
     }
     @keyframes heartBeat {
-      0% { transform: translate(-50%, 0) scale(0.95); opacity: 0.6; }
-      100% { transform: translate(-50%, 0) scale(1.05); opacity: 1; }
+      0% { transform: scale(0.95); opacity: 0.6; }
+      100% { transform: scale(1.08); opacity: 1; }
     }
     .confetti {
       position: absolute;
-      width: 8px;
-      height: 8px;
+      width: 10px;
+      height: 10px;
       z-index: 40;
       pointer-events: none;
       border-radius: 50%;
@@ -55,34 +51,23 @@
     }
     @keyframes confettiFall {
       0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(100dvh) rotate(720deg); opacity: 0; }
-    }
-    #ranking-list::-webkit-scrollbar {
-      display: none;
-    }
-    #ranking-list {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
+      100% { transform: translateY(600px) rotate(720deg); opacity: 0; }
     }
   </style>
 </head>
-<body class="w-full h-[100dvh] flex items-center justify-center p-2 sm:p-4 selection:bg-transparent">
+<body class="w-full h-screen flex items-center justify-center p-2 sm:p-4">
 
-  <!-- 紙吹雪用コンテナ -->
   <div id="confetti-container" class="absolute inset-0 pointer-events-none overflow-hidden z-40"></div>
 
-  <!-- メインコンテナ -->
-  <div class="relative w-full max-w-4xl h-full max-h-[750px] bg-neutral-950 border-4 border-red-950 rounded-xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
+  <div class="relative w-full max-w-4xl h-[94vh] max-h-[800px] bg-neutral-950 border-4 border-red-950 rounded-xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
     
-    <!-- 左側 / 上部：ゲーム描画・操作エリア -->
-    <div id="game-container" class="relative flex-1 h-[55%] md:h-full bg-black flex flex-col items-center justify-center overflow-hidden border-b-2 md:border-b-0 md:border-r-2 border-red-950/60 transition-all duration-300">
+    <div id="game-container" class="relative flex-1 h-[60%] md:h-full bg-black flex flex-col items-center justify-center overflow-hidden border-b-2 md:border-b-0 md:border-r-2 border-red-950/60 transition-all duration-300">
       
-      <!-- 1. ログイン/名前入力画面 -->
       <div id="screen-login" class="absolute inset-0 bg-black/95 flex flex-col items-center justify-center z-30 p-4 text-center">
-        <h1 class="horror-title text-4xl md:text-6xl text-red-600 mb-1 tracking-wider animate-pulse">戦慄迷宮</h1>
-        <p class="text-[10px] text-zinc-500 mb-5 tracking-widest font-bold">~ 旧長野中央高等学校の呪われた回廊 ~</p>
+        <h1 class="horror-title text-5xl md:text-6xl text-red-600 mb-1 tracking-wider animate-pulse">戦慄迷宮</h1>
+        <p class="text-[11px] text-zinc-500 mb-6 tracking-widest font-bold">~ 旧長野中央高等学校の呪われた回廊 ~</p>
         
-        <div class="w-full max-w-xs bg-zinc-900/90 border border-red-950 p-4 rounded-lg shadow-lg">
+        <div class="w-full max-w-xs bg-zinc-900/90 border border-red-950 p-5 rounded-lg shadow-lg">
           <label class="block text-red-500 text-xs mb-2 text-left">探索者の名前を設定してください：</label>
           <input type="text" id="player-name-input" maxlength="10" placeholder="名無しの走者" 
                  class="w-full bg-black border border-red-900/60 text-red-100 text-center py-2 px-3 rounded mb-4 focus:outline-none focus:ring-1 focus:ring-red-600 text-sm">
@@ -96,23 +81,22 @@
         </p>
       </div>
 
-      <!-- 2. ロビー / 待機画面 -->
       <div id="screen-lobby" class="absolute inset-0 bg-black/95 flex flex-col items-center justify-center z-20 p-4 text-center hidden">
-        <h2 class="text-lg text-red-500 mb-2 tracking-wider font-bold">旧長野中央高等学校の廊下</h2>
+        <h2 class="text-xl text-red-500 mb-3 tracking-wider font-bold">旧長野中央高等学校の廊下</h2>
         
-        <div class="text-left text-[10px] md:text-[11px] text-zinc-400 space-y-1.5 max-w-xs mb-4 border border-zinc-800 p-3 rounded bg-zinc-950/90 max-h-[50dvh] overflow-y-auto">
+        <div class="text-left text-[11px] text-zinc-400 space-y-2.5 max-w-xs mb-6 border border-zinc-800 p-3.5 rounded bg-zinc-950/90">
           <p class="text-red-400 font-bold text-xs">【ルール＆操作】</p>
-          <p>・廊下を自動で右方向へダッシュします（初期速度: <span class="text-red-400">5.0</span>）。</p>
+          <p>・旧長野中央高等学校の廊下を自動で右方向へダッシュします（最初の速さ: <span class="text-red-400">5.0</span>）。</p>
           <p>・画面の<span class="text-yellow-400 font-bold">どこでもタップ</span>するとジャンプ！</p>
           <p>・空中でもう一度タップすると<span class="text-yellow-400 font-bold">2段ジャンプ</span>が可能です。</p>
-          <p>・走るにつれて<span class="text-red-400 font-bold">少しずつ加速</span>していきます！</p>
-          <p>・<span class="text-yellow-400 font-bold">走った距離（1mにつき1点）</span>でスコアが増え続けます！</p>
-          <p>・「光の魂（金色）」を拾うと、<span class="text-yellow-400 font-bold">ボーナス +100点</span>！</p>
-          <p>・迫り来るお化けや床の穴を飛び越えろ！</p>
+          <p>・走るにつれて<span class="text-red-400 font-bold">少しずつ時間をかけて加速</span>していきます！</p>
+          <p>・<span class="text-yellow-400 font-bold">走った距離（1mにつき1点）</span>でスコアが常に増え続けます！</p>
+          <p>・さらに「光の魂（金色）」を拾うと、<span class="text-yellow-400 font-bold">ボーナス +100点加算</span>！</p>
+          <p>・迫り来る不気味なお化けたちを飛び越えろ！</p>
         </div>
 
-        <div class="flex flex-col gap-2 w-full max-w-xs">
-          <button id="btn-ready" class="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-2.5 rounded text-sm tracking-widest border-b-4 border-red-900 animate-pulse">
+        <div class="flex flex-col gap-2.5 w-full max-w-xs">
+          <button id="btn-ready" class="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-3 rounded text-sm tracking-widest border-b-4 border-red-900 animate-pulse">
             探索開始 (音あり)
           </button>
           <button id="btn-change-name" class="w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-500 py-1 rounded text-[10px]">
@@ -121,704 +105,44 @@
         </div>
       </div>
 
-      <!-- 3. ゲームオーバー画面 -->
       <div id="screen-gameover" class="absolute inset-0 bg-black/95 flex flex-col items-center justify-center z-25 p-4 text-center hidden">
-        <div id="celebration-badge" class="hidden mb-2 text-xs font-bold text-yellow-400 bg-yellow-950/40 border border-yellow-800 px-3 py-1 rounded-full animate-bounce">
-          👑 オンラインランキング第1位！ 👑
+        <div id="celebration-badge" class="hidden mb-3 text-sm font-bold text-yellow-400 bg-yellow-950/40 border border-yellow-800 px-4 py-1.5 rounded-full animate-bounce">
+          👑 オンラインランキング第1位に輝きました！ 👑
         </div>
-        <div id="new-best-badge" class="hidden mb-2 text-xs font-bold text-green-400 bg-green-950/40 border border-green-800 px-3 py-1 rounded-full animate-pulse">
+        <div id="new-best-badge" class="hidden mb-3 text-sm font-bold text-green-400 bg-green-950/40 border border-green-800 px-4 py-1.5 rounded-full animate-pulse">
           🎉 自己ベスト更新！ NEW RECORD 🎉
         </div>
 
-        <h2 class="horror-title text-3xl text-red-600 mb-1 tracking-wider">魂を奪われた...</h2>
-        <p class="text-[10px] text-red-400 mb-3">お化けに捕まるか、穴に落ちてしまった</p>
+        <h2 class="horror-title text-4xl text-red-600 mb-1 tracking-wider">魂を奪われた...</h2>
+        <p class="text-xs text-red-400 mb-4">お化けに捕まるか、床に落ちてしまった</p>
         
-        <div class="bg-zinc-950 border-2 border-red-950 p-4 rounded-lg max-w-xs w-full mb-4">
-          <div class="mb-2">
-            <p class="text-[10px] text-zinc-500 font-bold tracking-wider">今回の獲得スコア</p>
-            <p class="text-3xl font-extrabold text-yellow-500 font-mono my-1 score-glow" id="go-score">0</p>
+        <div class="bg-zinc-950 border-2 border-red-950 p-5 rounded-lg max-w-xs w-full mb-5">
+          <div class="mb-4">
+            <p class="text-xs text-zinc-500 font-bold tracking-wider">今回の獲得スコア</p>
+            <p class="text-4xl font-extrabold text-yellow-500 font-mono my-2 score-glow" id="go-score">0</p>
           </div>
           
-          <div class="flex justify-between items-center text-xs border-t border-zinc-900 pt-2 text-zinc-400">
+          <div class="flex justify-between items-center text-xs border-t border-zinc-900 pt-3 text-zinc-400">
             <span class="font-bold">自己ハイスコア:</span>
-            <span class="text-xl text-green-400 font-extrabold font-mono best-glow" id="go-best">0</span>
+            <span class="text-2xl text-green-400 font-extrabold font-mono best-glow" id="go-best">0</span>
           </div>
         </div>
 
-        <div class="flex flex-col gap-2 w-full max-w-xs">
-          <button id="btn-restart" class="w-full bg-red-800 hover:bg-red-700 text-white font-bold py-2 rounded text-xs tracking-widest">
+        <div class="flex flex-col gap-2.5 w-full max-w-xs">
+          <button id="btn-restart" class="w-full bg-red-800 hover:bg-red-700 text-white font-bold py-2.5 rounded text-xs tracking-widest">
             もう一度走る
           </button>
-          <button id="btn-to-lobby" class="w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-400 py-1.5 rounded text-xs">
+          <button id="btn-to-lobby" class="w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-400 py-2 rounded text-xs">
             ロビーに戻る
           </button>
         </div>
       </div>
 
-      <!-- プレイ中のリアルタイムUI -->
-      <div class="absolute top-0 inset-x-0 p-2 flex justify-between items-start pointer-events-none z-10 text-[11px]">
-        <div class="bg-black/75 px-2 py-1 rounded border border-red-950/40 backdrop-blur-sm flex flex-col gap-0.5">
+      <div class="absolute top-0 inset-x-0 p-3 flex justify-between items-start pointer-events-none z-10 text-xs">
+        <div class="bg-black/75 px-2.5 py-1.5 rounded border border-red-950/40 backdrop-blur-sm flex flex-col gap-1">
           <div><span class="text-zinc-500">走者:</span> <span id="ui-player-name" class="text-red-400 font-bold">---</span></div>
           <div><span class="text-zinc-500">SPEED:</span> <span id="ui-speed" class="text-red-500 font-bold font-mono">1.0x</span></div>
         </div>
         
-        <div class="flex flex-col gap-1.5 font-mono items-end">
-          <div class="bg-black/90 px-3 py-1 rounded-md border border-yellow-600/50 backdrop-blur-md text-right min-w-[110px] shadow-lg">
-            <div class="text-[8px] text-yellow-600 leading-none mb-0.5 font-bold tracking-widest">SCORE</div>
-            <div id="ui-score" class="text-yellow-400 font-black text-xl leading-none score-glow">0</div>
-          </div>
-          <div class="bg-black/90 px-3 py-1 rounded-md border border-green-600/50 backdrop-blur-md text-right min-w-[110px] shadow-lg">
-            <div class="text-[8px] text-green-500 leading-none mb-0.5 font-bold tracking-widest">HIGH</div>
-            <div id="ui-best" class="text-green-400 font-black text-lg leading-none best-glow">0</div>
-          </div>
-        </div>
-      </div>
-
-      <div id="ui-record-banner" class="absolute top-24 left-1/2 transform -translate-x-1/2 bg-red-950/80 border border-red-600/60 px-3 py-1 rounded shadow-lg pointer-events-none z-10 pulse-record text-red-500 font-bold text-[10px] tracking-widest hidden">
-        ⚠️ 自己新記録更新中！ ⚠️
-      </div>
-
-      <!-- 操作領域兼キャンバス -->
-      <canvas id="game-canvas" class="w-full h-full block cursor-pointer"></canvas>
-
-      <div class="absolute bottom-2 pointer-events-none text-[9px] text-zinc-500 animate-pulse bg-black/30 px-3 py-0.5 rounded-full border border-zinc-800/60">
-        画面をタップしてジャンプ！
-      </div>
-    </div>
-
-    <!-- 右側 / 下部：リアルタイムスコアボード -->
-    <div id="ranking-panel" class="w-full md:w-64 h-[45%] md:h-full bg-zinc-950 p-2.5 flex flex-col justify-between overflow-hidden transition-all duration-300">
-      <div class="flex-1 flex flex-col overflow-hidden">
-        <div class="border-b border-red-950/60 pb-1 mb-1.5 flex justify-between items-center">
-          <div>
-            <h3 class="text-[11px] font-bold text-red-500 tracking-wider flex items-center gap-1">
-              <span class="inline-block w-1.5 h-1.5 rounded-full bg-red-600 animate-ping"></span>
-              オンラインランキング (TOP 10)
-            </h3>
-            <p id="ranking-desc" class="text-[8px] text-zinc-600">ローカルモード起動中</p>
-          </div>
-        </div>
-
-        <div id="ranking-list" class="flex-1 overflow-y-auto space-y-1 pr-0.5 text-[11px]">
-          <!-- 動的ランキング -->
-        </div>
-      </div>
-
-      <div class="border-t border-zinc-900 pt-1.5 mt-1">
-        <div class="bg-zinc-900/40 p-2 rounded border border-zinc-800 flex justify-between items-center text-xs">
-          <div class="overflow-hidden mr-1">
-            <p class="text-[8px] text-zinc-500">あなたの自己ベスト</p>
-            <p id="local-best-name" class="text-zinc-300 font-bold truncate max-w-[110px]">未登録</p>
-          </div>
-          <div class="text-right flex-shrink-0">
-            <p class="text-[8px] text-yellow-600">HIGH SCORE</p>
-            <p id="local-best-score" class="text-base font-black text-yellow-500 font-mono score-glow">0</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="absolute bottom-0.5 text-[8px] text-zinc-800 pointer-events-none">
-    © 2026 Senritsu Meikyu - Old Nagano Chuo High School.
-  </div>
-
-  <script>
-    var gameState = "lobby"; 
-    var playerName = localStorage.getItem("hgr_player_name") || "";
-    var localHighScore = parseInt(localStorage.getItem("hgr_high_score") || "0");
-    var rankings = [];
-    var hasAnnouncedRecordThisRun = false; 
-
-    var isOnlineActive = false;
-    var app = null;
-    var auth = null;
-    var db = null;
-    var user = null;
-
-    // --- Firebase 完全安全化用の読み込み＆ハンドラ（ダミー設定値によるエラーを防ぐ） ---
-    const firebaseConfig = {
-      apiKey: "AIzaSyB8is_dVibAhOZ688KiX0IKjxYUg5NSpVM",
-      authDomain: "mini-game-run-and-dash.firebaseapp.com",
-      databaseURL: "https://mini-game-run-and-dash-default-rtdb.firebaseio.com",
-      projectId: "mini-game-run-and-dash",
-      storageBucket: "mini-game-run-and-dash.firebasestorage.app",
-      messagingSenderId: "742847724155",
-      appId: "1:742847724155:web:718a4314a58764123540de"
-    };
-
-    if (typeof firebase !== 'undefined' && firebase.initializeApp) {
-      try {
-        app = firebase.initializeApp(firebaseConfig);
-        auth = firebase.auth();
-        db = firebase.firestore();
-        isOnlineActive = true;
-      } catch (e) {
-        console.warn("Firebase config error, fallback to local mode.");
-        isOnlineActive = false;
-      }
-    }
-
-    const screenLogin = document.getElementById("screen-login");
-    const screenLobby = document.getElementById("screen-lobby");
-    const screenGameover = document.getElementById("screen-gameover");
-    const inputName = document.getElementById("player-name-input");
-    const btnStart = document.getElementById("btn-start");
-    const btnReady = document.getElementById("btn-ready");
-    const btnChangeName = document.getElementById("btn-change-name");
-    const btnRestart = document.getElementById("btn-restart");
-    const btnToLobby = document.getElementById("btn-to-lobby");
-
-    const uiPlayerName = document.getElementById("ui-player-name");
-    const uiScore = document.getElementById("ui-score");
-    const uiBest = document.getElementById("ui-best");
-    const uiSpeed = document.getElementById("ui-speed");
-    const uiRecordBanner = document.getElementById("ui-record-banner");
-
-    const celebrationBadge = document.getElementById("celebration-badge");
-    const newBestBadge = document.getElementById("new-best-badge");
-    const goScore = document.getElementById("go-score");
-    const goBest = document.getElementById("go-best");
-    
-    const rankingList = document.getElementById("ranking-list");
-    const localBestName = document.getElementById("local-best-name");
-    const localBestScore = document.getElementById("local-best-score");
-
-    const canvas = document.getElementById("game-canvas");
-    const ctx = canvas.getContext("2d");
-
-    const rankingPanel = document.getElementById("ranking-panel");
-    const gameContainer = document.getElementById("game-container");
-    const confettiContainer = document.getElementById("confetti-container");
-
-    // --- 音声システム ---
-    var audioCtx = null;
-    function initAudioContext() {
-      if (audioCtx) return;
-      try {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      } catch (e) {}
-    }
-    
-    function playTone(freq, type, duration, volume) {
-      if (!audioCtx) return;
-      try {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        var osc = audioCtx.createOscillator();
-        var gain = audioCtx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(volume, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + duration);
-      } catch (e) {}
-    }
-
-    function playJumpSound() { playTone(200, 'triangle', 0.15, 0.15); setTimeout(() => playTone(350, 'triangle', 0.2, 0.1), 50); }
-    function playDoubleJumpSound() { playTone(450, 'sine', 0.1, 0.15); setTimeout(() => playTone(650, 'sine', 0.15, 0.1), 30); }
-    function playGetSound() { playTone(1050, 'sine', 0.08, 0.12); setTimeout(() => playTone(1550, 'sine', 0.12, 0.08), 50); }
-    function playHurtSound() { playTone(80, 'sawtooth', 0.5, 0.3); playTone(120, 'sawtooth', 0.5, 0.15); }
-    function playFanfareNewBest() { playTone(523.25, 'sine', 0.1, 0.15); setTimeout(() => playTone(659.25, 'sine', 0.1, 0.15), 100); setTimeout(() => playTone(783.99, 'sine', 0.1, 0.15), 200); setTimeout(() => playTone(1046.50, 'sine', 0.3, 0.2), 300); }
-    function playFanfareNumberOne() { playTone(523.25, 'square', 0.12, 0.12); setTimeout(() => playTone(659.25, 'square', 0.12, 0.12), 150); setTimeout(() => playTone(783.99, 'square', 0.12, 0.12), 300); setTimeout(() => playTone(1046.50, 'square', 0.5, 0.2), 450); }
-    function playNewRecordSignal() { playTone(880, 'sine', 0.15, 0.12); setTimeout(() => playTone(1100, 'sine', 0.25, 0.12), 80); }
-
-    // --- 安全第一の初期認証フロー ---
-    if (isOnlineActive && auth) {
-      auth.signInAnonymously().then(() => {
-        auth.onAuthStateChanged((u) => {
-          user = u;
-          setupRankingListener();
-          syncLocalScore();
-        });
-      }).catch((err) => {
-        console.warn("Auth failed, switching to offline local mode.");
-        isOnlineActive = false;
-        setupRankingListener();
-      });
-    } else {
-      isOnlineActive = false;
-      setTimeout(setupRankingListener, 50);
-    }
-
-    if (playerName) {
-      inputName.value = playerName;
-      showLobby();
-    } else {
-      showLogin();
-    }
-
-    function showLogin() {
-      screenLogin.classList.remove("hidden");
-      screenLobby.classList.add("hidden");
-      screenGameover.classList.add("hidden");
-      updateScreenLayout("login");
-    }
-
-    function showLobby() {
-      screenLogin.classList.add("hidden");
-      screenLobby.classList.remove("hidden");
-      screenGameover.classList.add("hidden");
-      localBestName.textContent = playerName || "未登録";
-      localBestScore.textContent = localHighScore;
-      uiBest.textContent = localHighScore;
-      
-      loadLocalCacheFirst();
-      updateScreenLayout("lobby");
-    }
-
-    function updateScreenLayout(state) {
-      if (!rankingPanel || !gameContainer) return;
-      if (state === "playing") {
-        rankingPanel.classList.add("hidden");
-        gameContainer.classList.remove("h-[55%]", "md:h-full");
-        gameContainer.classList.add("h-full", "w-full");
-      } else {
-        rankingPanel.classList.remove("hidden");
-        gameContainer.classList.add("h-[55%]", "md:h-full");
-        gameContainer.classList.remove("h-full", "w-full");
-      }
-      setTimeout(resizeCanvas, 30);
-    }
-
-    btnStart.addEventListener("click", function() {
-      var val = inputName.value.trim();
-      if (!val) val = "名無しの走者";
-      playerName = val;
-      localStorage.setItem("hgr_player_name", playerName);
-      initAudioContext();
-      showLobby();
-    });
-
-    btnChangeName.addEventListener("click", () => showLogin());
-
-    function loadLocalCacheFirst() {
-      var saved = localStorage.getItem("hgr_rankings");
-      var tempRankings = [];
-      if (saved) {
-        try { tempRankings = JSON.parse(saved); } catch (e) { tempRankings = []; }
-      }
-      tempRankings = tempRankings.filter(item => item && item.playerName && item.score !== undefined);
-
-      if (playerName && localHighScore > 0) {
-        if (!tempRankings.some(item => item.playerName === playerName)) {
-          tempRankings.push({ userId: "local", playerName: playerName, score: localHighScore });
-        }
-      }
-      tempRankings.sort((a, b) => (Number(b.score)||0) - (Number(a.score)||0));
-      rankings = tempRankings.slice(0, 10);
-      updateRankingUI();
-    }
-
-    function setupRankingListener() {
-      if (!isOnlineActive || !db) {
-        loadLocalCacheFirst();
-        document.getElementById("ranking-desc").textContent = "ローカル保存モード";
-        return;
-      }
-      try {
-        db.collection('rankings').orderBy('score', 'desc').limit(10).onSnapshot((snapshot) => {
-          var rawScores = [];
-          snapshot.forEach((doc) => {
-            if (doc.exists) {
-              var data = doc.data();
-              if (data && data.playerName && data.score !== undefined) rawScores.push(data);
-            }
-          });
-          rankings = rawScores.sort((a, b) => b.score - a.score).slice(0, 10);
-          document.getElementById("ranking-desc").textContent = "オンライン同期中";
-          updateRankingUI();
-        }, (err) => {
-          isOnlineActive = false;
-          loadLocalCacheFirst();
-          document.getElementById("ranking-desc").textContent = "ローカル保存モード";
-        });
-      } catch (e) {
-        isOnlineActive = false;
-        loadLocalCacheFirst();
-      }
-    }
-
-    function updateRankingUI() {
-      if (!rankingList) return;
-      rankingList.innerHTML = "";
-      if (!rankings || rankings.length === 0) {
-        rankingList.innerHTML = `<div class="text-center text-zinc-600 py-10 border border-zinc-900 border-dashed rounded-lg">記録がありません</div>`;
-        return;
-      }
-      rankings.forEach((item, index) => {
-        var isMe = (item.playerName === playerName);
-        var rankClass = index === 0 ? "text-yellow-400 font-bold" : index === 1 ? "text-slate-300" : index === 2 ? "text-amber-600" : "text-zinc-500";
-        var bgClass = isMe ? "bg-red-950/40 border border-red-900/30" : "bg-zinc-900/30 border border-zinc-950";
-        var div = document.createElement("div");
-        div.className = "flex justify-between items-center p-1.5 rounded " + bgClass;
-        div.innerHTML = `
-          <div class="flex items-center gap-1.5 overflow-hidden mr-1">
-            <span class="w-4 text-center ${rankClass} font-mono">${index + 1}</span>
-            <span class="truncate ${isMe ? 'text-red-400 font-bold' : 'text-zinc-300'}">${escapeHTML(item.playerName)}</span>
-          </div>
-          <span class="font-bold text-yellow-500 font-mono">${item.score}</span>
-        `;
-        rankingList.appendChild(div);
-      });
-    }
-
-    function escapeHTML(str) {
-      return String(str || "").replace(/[&<>'"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[m]));
-    }
-
-    function syncLocalScore() {
-      if (!playerName) return;
-      localBestName.textContent = playerName;
-      localBestScore.textContent = localHighScore;
-      uiBest.textContent = localHighScore;
-    }
-
-    function uploadScore(score) {
-      if (!playerName) return;
-      if (score > localHighScore) {
-        localHighScore = score;
-        localStorage.setItem("hgr_high_score", localHighScore.toString());
-        if (localBestScore) localBestScore.textContent = localHighScore;
-        if (uiBest) uiBest.textContent = localHighScore;
-        
-        saveLocalRankings(playerName, score);
-
-        if (isOnlineActive && db && user) {
-          db.collection('rankings').doc(user.uid).set({
-            userId: user.uid, playerName: playerName, score: Number(localHighScore), updatedAt: Date.now()
-          }).catch(() => {});
-        }
-      }
-    }
-
-    function saveLocalRankings(name, score) {
-      var saved = localStorage.getItem("hgr_rankings");
-      var temp = [];
-      if (saved) { try { temp = JSON.parse(saved); } catch(e){} }
-      temp = temp.filter(i => i && i.playerName);
-      var f = temp.find(i => i.playerName === name);
-      if (f) { if(score > f.score) f.score = score; } else { temp.push({playerName: name, score: score}); }
-      temp.sort((a,b) => b.score - a.score);
-      localStorage.setItem("hgr_rankings", JSON.stringify(temp.slice(0,10)));
-      if (!isOnlineActive) loadLocalCacheFirst();
-    }
-
-    function spawnConfetti(isGrandPrize) {
-      if (!confettiContainer) return;
-      confettiContainer.innerHTML = "";
-      var colors = isGrandPrize ? ["#fbbf24", "#f59e0b", "#fff", "#ef4444"] : ["#4ade80", "#22c55e", "#fff", "#ef4444"]; 
-      for (var i = 0; i < (isGrandPrize ? 70 : 35); i++) {
-        var confetti = document.createElement("div");
-        confetti.className = "confetti";
-        confetti.style.left = Math.random() * 100 + "vw";
-        confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
-        confetti.style.transform = "scale(" + (0.4 + Math.random() * 0.8) + ")";
-        confetti.style.animationDelay = Math.random() * 0.4 + "s";
-        confetti.style.animationDuration = (1.5 + Math.random() * 1.5) + "s";
-        confettiContainer.appendChild(confetti);
-      }
-    }
-
-    // --- ゲームエンジン ---
-    var gameScore = 0, distanceCount = 0, spiritPoints = 0; 
-    const INITIAL_SPEED = 5.0, MAX_SPEED = 11.0, ACCEL_RATE = 480;
-    var runSpeed = INITIAL_SPEED, lastTime = 0;
-    const GRAVITY = 0.54, JUMP_FORCE = -8.8, WORLD_GROUND_Y = 0.78; 
-
-    var runner = { x: 80, y: 0, width: 24, height: 38, vy: 0, isGrounded: false, jumpCount: 0, animFrame: 0, rotation: 0 };
-    var scorePopTime = 0, backgroundAssets = [], obstacles = [], spirits = [], particles = [], obstacleTimer = 0;
-
-    function initBackground() {
-      backgroundAssets = [];
-      for (var i = 0; i < 6; i++) {
-        backgroundAssets.push({ x: i * 220, type: i % 2 === 0 ? 'door' : 'window', width: i % 2 === 0 ? 50 : 70, height: i % 2 === 0 ? 110 : 70 });
-      }
-    }
-
-    function spawnSparkParticles(x, y) {
-      for (var i = 0; i < 10; i++) {
-        var angle = Math.random() * Math.PI * 2;
-        var speed = 2 + Math.random() * 3;
-        particles.push({ x: x, y: y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 1, radius: 2 + Math.random() * 2, color: "hsl(" + (40 + Math.random() * 20) + ", 100%, 70%)", life: 1.0, decay: 0.04 + Math.random() * 0.03 });
-      }
-    }
-
-    function updateObstaclesAndSpirits(canvasWidth, canvasHeight) {
-      var groundY = canvasHeight * WORLD_GROUND_Y;
-      var dynamicInterval = Math.max(55, 95 - (runSpeed - INITIAL_SPEED) * 10);
-      obstacleTimer++;
-      
-      if (obstacleTimer > dynamicInterval + Math.random() * 60) {
-        obstacleTimer = 0;
-        var randType = Math.random();
-        if (randType < 0.45) {
-          obstacles.push({ x: canvasWidth + 50, y: groundY - 28, width: 28, height: 28, type: 'ground', spriteType: Math.random() > 0.5 ? 'head' : 'anatomical', pulse: Math.random() * 10 });
-        } else if (randType < 0.75) {
-          obstacles.push({ x: canvasWidth + 50, y: groundY - 70 - Math.random() * 40, width: 28, height: 28, type: 'air', pulse: Math.random() * Math.PI * 2 });
-        } else {
-          obstacles.push({ x: canvasWidth + 50, y: groundY, width: 45 + Math.random() * 20, height: canvasHeight - groundY, type: 'pit' });
-        }
-        if (Math.random() < 0.85) {
-          var sy = groundY - 55 - Math.random() * 45;
-          for (var k = 0; k < 3; k++) spirits.push({ x: canvasWidth + 120 + k * 35, y: sy - (k === 1 ? 12 : 0), collected: false, pulse: Math.random() * Math.PI });
-        }
-      }
-
-      for (var i = obstacles.length - 1; i >= 0; i--) {
-        var obs = obstacles[i]; obs.x -= runSpeed;
-        if (obs.pulse !== undefined) obs.pulse += 0.15;
-        if (checkCollision(runner, obs, canvasHeight)) { triggerGameOver(); return; }
-        if (obs.x + obs.width < -120) obstacles.splice(i, 1);
-      }
-
-      for (var i = spirits.length - 1; i >= 0; i--) {
-        var sp = spirits[i]; sp.x -= runSpeed; sp.pulse += 0.12;
-        var rx = runner.x + runner.width / 2, ry = runner.y + runner.height / 2;
-        if (!sp.collected && Math.hypot(rx - sp.x, ry - sp.y) < 28) {
-          sp.collected = true; spiritPoints += 100; scorePopTime = 15;
-          spawnSparkParticles(sp.x, sp.y); playGetSound();
-        }
-        if (sp.x < -50 || sp.collected) spirits.splice(i, 1);
-      }
-
-      for (var i = particles.length - 1; i >= 0; i--) {
-        var p = particles[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.life -= p.decay;
-        if (p.life <= 0) particles.splice(i, 1);
-      }
-    }
-
-    function checkCollision(player, obs, canvasHeight) {
-      var px1 = player.x, px2 = player.x + player.width;
-      var py1 = player.y, py2 = player.y + player.height;
-      if (obs.type === 'pit') {
-        var buffer = 5; 
-        if (px2 - buffer > obs.x && px1 + buffer < obs.x + obs.width) {
-          if (py2 >= canvasHeight * WORLD_GROUND_Y - 3) { player.isGrounded = false; return false; }
-        }
-      } else {
-        return px1 < obs.x + obs.width && px2 > obs.x && py1 < obs.y + obs.height && py2 > obs.y;
-      }
-      return false;
-    }
-
-    function startGame() {
-      gameState = "playing";
-      gameScore = 0; distanceCount = 0; spiritPoints = 0; runSpeed = INITIAL_SPEED; obstacleTimer = -130;
-      obstacles = []; spirits = []; particles = []; scorePopTime = 0; hasAnnouncedRecordThisRun = false;
-
-      uiScore.textContent = gameScore; uiSpeed.textContent = "1.0x"; uiPlayerName.textContent = playerName; uiBest.textContent = localHighScore;
-      uiRecordBanner.classList.add("hidden"); celebrationBadge.classList.add("hidden"); newBestBadge.classList.add("hidden");
-      confettiContainer.innerHTML = ""; screenLobby.classList.add("hidden"); screenGameover.classList.add("hidden");
-      updateScreenLayout("playing");
-
-      var dpr = window.devicePixelRatio || 1;
-      var groundY = (canvas.height / dpr) * WORLD_GROUND_Y;
-      runner.y = groundY - runner.height; runner.vy = 0; runner.isGrounded = true; runner.jumpCount = 0; runner.rotation = 0;
-
-      initBackground();
-      lastTime = performance.now();
-      requestAnimationFrame(gameLoop);
-    }
-
-    function triggerGameOver() {
-      gameState = "gameover";
-      playHurtSound();
-      if (goScore) goScore.textContent = gameScore;
-      if (goBest) goBest.textContent = Math.max(gameScore, localHighScore);
-      if (uiRecordBanner) uiRecordBanner.classList.add("hidden");
-
-      var isNewLocalBest = gameScore > localHighScore;
-      var isNumberOne = (rankings && rankings[0]) ? (gameScore > (Number(rankings[0].score) || 0)) : (gameScore > 0);
-
-      uploadScore(gameScore);
-
-      if (isNumberOne) {
-        if (celebrationBadge) celebrationBadge.classList.remove("hidden");
-        spawnConfetti(true); playFanfareNumberOne();
-      } else if (isNewLocalBest) {
-        if (newBestBadge) newBestBadge.classList.remove("hidden");
-        spawnConfetti(false); playFanfareNewBest();
-      }
-      updateScreenLayout("gameover");
-      if (screenGameover) screenGameover.classList.remove("hidden");
-    }
-
-    const handleAction = () => {
-      if (gameState !== "playing") return;
-      initAudioContext();
-      if (runner.isGrounded) {
-        runner.vy = JUMP_FORCE; runner.isGrounded = false; runner.jumpCount = 1; playJumpSound();
-      } else if (runner.jumpCount < 2) {
-        runner.vy = JUMP_FORCE * 0.88; runner.jumpCount = 2; runner.rotation = -Math.PI; playDoubleJumpSound();
-      }
-    };
-
-    canvas.addEventListener("touchstart", (e) => { if (e.cancelable) e.preventDefault(); handleAction(); }, { passive: false });
-    canvas.addEventListener("mousedown", (e) => { e.preventDefault(); handleAction(); });
-    window.addEventListener("keydown", (e) => { if (e.code === "Space" || e.key === " " || e.code === "ArrowUp") { e.preventDefault(); handleAction(); } });
-
-    function gameLoop(timestamp) {
-      if (gameState !== "playing") return;
-      var delta = (timestamp - lastTime) / 1000; lastTime = timestamp;
-
-      var dpr = window.devicePixelRatio || 1;
-      var cw = canvas.width / dpr, ch = canvas.height / dpr, groundY = ch * WORLD_GROUND_Y;
-
-      distanceCount += runSpeed * 0.15; gameScore = Math.floor(distanceCount) + spiritPoints; uiScore.textContent = Math.floor(gameScore);
-
-      if (localHighScore > 0 && gameScore > localHighScore && !hasAnnouncedRecordThisRun) {
-        hasAnnouncedRecordThisRun = true; uiRecordBanner.classList.remove("hidden"); playNewRecordSignal();
-      }
-
-      runSpeed = INITIAL_SPEED + (distanceCount / ACCEL_RATE);
-      if (runSpeed > MAX_SPEED) runSpeed = MAX_SPEED;
-      uiSpeed.textContent = (runSpeed / INITIAL_SPEED).toFixed(1) + "x";
-
-      runner.vy += GRAVITY; runner.y += runner.vy;
-      if (runner.rotation < 0) { runner.rotation += 0.18; if (runner.rotation > 0) runner.rotation = 0; }
-
-      if (runner.y + runner.height >= groundY) {
-        var pxCenter = runner.x + runner.width / 2;
-        if (!obstacles.some(o => o.type === 'pit' && pxCenter > o.x && pxCenter < o.x + o.width)) {
-          runner.y = groundY - runner.height; runner.vy = 0; runner.isGrounded = true; runner.jumpCount = 0; runner.rotation = 0;
-        }
-      }
-      if (runner.y > ch + 50) { triggerGameOver(); return; }
-      if (runner.isGrounded) runner.animFrame += runSpeed * 0.055;
-
-      backgroundAssets.forEach(bg => {
-        bg.x -= runSpeed * 0.38;
-        if (bg.x + bg.width < -120) { bg.x = cw + 100 + Math.random() * 120; bg.type = Math.random() > 0.5 ? 'door' : 'window'; }
-      });
-
-      updateObstaclesAndSpirits(cw, ch);
-      if (scorePopTime > 0) scorePopTime--;
-      draw(cw, ch, groundY);
-      requestAnimationFrame(gameLoop);
-    }
-
-    function draw(cw, ch, groundY) {
-      ctx.save();
-      var dpr = window.devicePixelRatio || 1; ctx.scale(dpr, dpr);
-      ctx.fillStyle = "#0c080d"; ctx.fillRect(0, 0, cw, ch);
-
-      const skyGrad = ctx.createRadialGradient(cw / 2, ch / 3, 5, cw / 2, ch / 3, cw * 0.8);
-      skyGrad.addColorStop(0, "rgba(85, 12, 12, 0.45)"); skyGrad.addColorStop(0.5, "rgba(22, 12, 28, 0.2)"); skyGrad.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, cw, ch);
-
-      ctx.fillStyle = "#160e1a"; 
-      backgroundAssets.forEach(bg => {
-        const by = groundY - bg.height; ctx.fillRect(bg.x, by, bg.width, bg.height);
-        if (bg.type === 'door') {
-          ctx.strokeStyle = "#08040a"; ctx.lineWidth = 2; ctx.strokeRect(bg.x + 3, by + 3, bg.width - 6, bg.height - 3);
-          ctx.fillStyle = "#5c0505"; ctx.beginPath(); ctx.arc(bg.x + bg.width - 8, by + bg.height / 2, 3, 0, Math.PI * 2); ctx.fill();
-        } else {
-          ctx.strokeStyle = "#2e1212"; ctx.lineWidth = 1.5; ctx.strokeRect(bg.x + 5, by + 5, bg.width - 10, bg.height - 10);
-          ctx.beginPath(); ctx.moveTo(bg.x + bg.width / 2, by + 5); ctx.lineTo(bg.x + bg.width / 2, by + bg.height - 5); ctx.moveTo(bg.x + 5, by + bg.height / 2); ctx.lineTo(bg.x + bg.width - 5, by + bg.height / 2); ctx.stroke();
-          ctx.fillStyle = "rgba(185, 28, 28, 0.15)"; ctx.fillRect(bg.x + 6, by + 6, bg.width - 12, bg.height - 12);
-        }
-      });
-
-      drawFloor(cw, ch, groundY); drawObstacles(groundY); drawSpirits(); drawParticles(); drawRunner(); drawFlashlightOverlay(cw, ch); drawRunningScore();
-      ctx.restore();
-    }
-
-    function drawFloor(cw, ch, groundY) {
-      ctx.fillStyle = "#1a0f0f"; ctx.fillRect(0, groundY, cw, ch - groundY);
-      ctx.strokeStyle = "#0d0606"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(cw, groundY); ctx.stroke();
-      ctx.strokeStyle = "#100808"; ctx.lineWidth = 1;
-      for (var y = groundY + 8; y < ch; y += 12) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cw, y); ctx.stroke(); }
-      ctx.fillStyle = "#000000"; obstacles.forEach(o => { if (o.type === 'pit') { ctx.fillRect(o.x, o.y, o.width, o.height); ctx.strokeStyle = "#450a0a"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(o.x, o.y + 12); ctx.moveTo(o.x + o.width, o.y); ctx.lineTo(o.x + o.width, o.y + 12); ctx.stroke(); } });
-    }
-
-    function drawObstacles(groundY) {
-      obstacles.forEach(obs => {
-        if (obs.type === 'pit') return;
-        ctx.save(); ctx.translate(obs.x, obs.y);
-        if (obs.type === 'ground') {
-          if (obs.spriteType === 'head') {
-            var hair = Math.sin(obs.pulse) * 4; ctx.fillStyle = "#0c0a0f"; ctx.beginPath(); ctx.moveTo(-6, -6); ctx.bezierCurveTo(-15, obs.height / 2 + hair, -12, obs.height + 4, -8, obs.height + 8); ctx.lineTo(obs.width / 2, 0); ctx.fill();
-            ctx.beginPath(); ctx.moveTo(obs.width + 6, -6); ctx.bezierCurveTo(obs.width + 15, obs.height / 2 - hair, obs.width + 12, obs.height + 4, obs.width + 8, obs.height + 8); ctx.lineTo(obs.width / 2, 0); ctx.fill();
-            ctx.fillStyle = "#cbd5e1"; ctx.beginPath(); ctx.arc(obs.width / 2, obs.height / 2, obs.width / 2.3, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = "#0c0a0f"; ctx.fillRect(4, 2, obs.width - 8, 6); ctx.beginPath(); ctx.moveTo(4, 8); ctx.lineTo(obs.width / 2, 12); ctx.lineTo(obs.width - 4, 8); ctx.fill();
-            ctx.fillStyle = "#fee2e2"; ctx.beginPath(); ctx.arc(obs.width / 2 - 4, obs.height / 2, 3, 0, Math.PI * 2); ctx.arc(obs.width / 2 + 4, obs.height / 2, 3, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = "#ef4444"; ctx.fillRect(obs.width / 2 - 4, obs.height / 2 - 1, 1.5, 1.5); ctx.fillRect(obs.width / 2 + 2, obs.height / 2 - 1, 1.5, 1.5);
-            ctx.fillStyle = "#dc2626"; ctx.fillRect(obs.width / 2 - 3, obs.height / 2 + 6, 6, 2);
-          } else {
-            ctx.fillStyle = "#1e1b4b"; ctx.fillRect(3, 0, obs.width - 6, obs.height); ctx.fillStyle = "#b91c1c"; ctx.fillRect(obs.width / 2, 4, obs.width / 2 - 3, obs.height - 4); ctx.fillStyle = "#f1f5f9"; ctx.fillRect(3, 4, obs.width / 2 - 3, obs.height - 12);
-            ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(obs.width / 2, 5, 4, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#000"; ctx.fillRect(obs.width / 2 - 2, 4, 1.5, 1.5); ctx.fillStyle = "#ef4444"; ctx.fillRect(obs.width / 2 + 1, 4, 1.5, 1.5);
-          }
-        } else {
-          var floatOffset = Math.sin(obs.pulse) * 4; ctx.fillStyle = "rgba(165, 243, 252, 0.6)"; ctx.beginPath(); ctx.moveTo(obs.width / 2 - 6, obs.height / 2 + floatOffset); ctx.bezierCurveTo(obs.width / 2 - 10, obs.height + floatOffset + 10, obs.width / 2 - 4, obs.height + floatOffset + 15, obs.width / 2, obs.height / 2 + floatOffset); ctx.lineTo(obs.width / 2, obs.height / 2 + floatOffset); ctx.fill();
-          var rGrad = ctx.createRadialGradient(obs.width / 2, obs.height / 2 + floatOffset, 1, obs.width / 2, obs.height / 2 + floatOffset, obs.width / 1.5); rGrad.addColorStop(0, "#ffffff"); rGrad.addColorStop(0.4, "rgba(207, 250, 254, 0.9)"); rGrad.addColorStop(1, "rgba(0,0,0,0)");
-          ctx.fillStyle = rGrad; ctx.beginPath(); ctx.arc(obs.width / 2, obs.height / 2 + floatOffset, obs.width / 1.5, 0, Math.PI * 2); ctx.fill();
-          ctx.fillStyle = "#083344"; ctx.beginPath(); ctx.arc(obs.width / 2 - 3, obs.height / 2 - 1 + floatOffset, 2.5, 0, Math.PI, true); ctx.arc(obs.width / 2 + 3, obs.height / 2 - 1 + floatOffset, 2.5, 0, Math.PI, true); ctx.fill();
-        }
-        ctx.restore();
-      });
-    }
-
-    function drawSpirits() {
-      spirits.forEach(sp => {
-        var b = Math.sin(sp.pulse) * 3.5; ctx.save(); ctx.translate(sp.x, sp.y + b);
-        var grad = ctx.createRadialGradient(0, 0, 1, 0, 0, 12); grad.addColorStop(0, "#ffffff"); grad.addColorStop(0.4, "rgba(253, 224, 71, 0.9)"); grad.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-      });
-    }
-
-    function drawParticles() { particles.forEach(p => { ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }); }
-
-    function drawRunner() {
-      ctx.save(); ctx.translate(runner.x + runner.width / 2, runner.y + runner.height / 2); ctx.rotate(runner.rotation);
-      const halfW = runner.width / 2, halfH = runner.height / 2, cycle = Math.floor(runner.animFrame) % 4;
-      ctx.fillStyle = "#1e293b"; ctx.fillRect(-halfW, -halfH + 8, runner.width, runner.height - 14);
-      ctx.fillStyle = "#991b1b"; ctx.fillRect(-halfW - 3, -halfH + 6, runner.width + 2, 5);
-      if (runner.isGrounded) { ctx.fillRect(-halfW - (cycle === 0 || cycle === 2 ? 7 : 9), -halfH + 7, 6, 3); } else { ctx.fillRect(-halfW - 5, -halfH + 3, 5, 4); }
-      ctx.fillStyle = "#fecdd3"; ctx.beginPath(); ctx.arc(2, -halfH + 3, 5.5, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#090d16"; ctx.beginPath(); ctx.arc(2, -halfH + 1, 6, Math.PI, 0); ctx.fill();
-      ctx.fillStyle = "#0f172a";
-      if (runner.isGrounded) { if (cycle === 0 || cycle === 2) { ctx.fillRect(-halfW + 3, halfH - 6, 3, 6); ctx.fillRect(halfW - 6, halfH - 6, 3, 6); } else { ctx.fillRect(-halfW, halfH - 5, 4, 4); ctx.fillRect(halfW - 4, halfH - 5, 4, 4); } } else { ctx.fillRect(-halfW + 1, halfH - 7, 3, 5); ctx.fillRect(halfW - 4, halfH - 4, 3, 4); }
-      ctx.fillStyle = "#94a3b8"; ctx.fillRect(halfW - 2, 2, 6, 3); ctx.fillStyle = "#eab308"; ctx.fillRect(halfW + 4, 1, 2, 5); ctx.restore();
-    }
-
-    function drawRunningScore() {
-      if (gameState !== "playing") return;
-      ctx.save(); var textX = runner.x + runner.width + 10, textY = runner.y - 10, size = scorePopTime > 0 ? 1.25 : 1.0;
-      ctx.font = "bold " + Math.floor(18 * size) + "px 'DotGothic16', sans-serif";
-      ctx.strokeStyle = "#000000"; ctx.lineWidth = 3.5; ctx.strokeText(Math.floor(gameScore), textX, textY);
-      ctx.fillStyle = scorePopTime > 0 ? "#ffffff" : "#facc15"; ctx.fillText(Math.floor(gameScore), textX, textY);
-      ctx.restore();
-    }
-
-    function drawFlashlightOverlay(cw, ch) {
-      const tc = document.createElement('canvas'); tc.width = cw; tc.height = ch; const tcCtx = tc.getContext('2d');
-      tcCtx.fillStyle = "rgba(4, 3, 7, 0.94)"; tcCtx.fillRect(0, 0, cw, ch);
-      const lx = runner.x + runner.width + 4, ly = runner.y + runner.height / 2 + 3;
-      tcCtx.save(); tcCtx.globalCompositeOperation = 'destination-out';
-      const amb = tcCtx.createRadialGradient(lx, ly, 2, lx, ly, 45); amb.addColorStop(0, "#fff"); amb.addColorStop(1, "rgba(255,255,255,0)");
-      tcCtx.fillStyle = amb; tcCtx.beginPath(); tcCtx.arc(lx, ly, 45, 0, Math.PI * 2); tcCtx.fill();
-      const beam = tcCtx.createRadialGradient(lx, ly, 10, lx + 175, ly, 250); beam.addColorStop(0, "#fff"); beam.addColorStop(0.8, "rgba(255,255,255,0.15)"); beam.addColorStop(1, "rgba(255,255,255,0)");
-      tcCtx.fillStyle = beam; tcCtx.beginPath(); tcCtx.moveTo(lx, ly); tcCtx.arc(lx, ly, 250, -Math.PI/6, Math.PI/6, false); tcCtx.lineTo(lx, ly); tcCtx.closePath(); tcCtx.fill();
-      tcCtx.restore(); ctx.drawImage(tc, 0, 0);
-    }
-
-    btnReady.addEventListener("click", () => { initAudioContext(); startGame(); });
-    btnRestart.addEventListener("click", () => startGame());
-    btnToLobby.addEventListener("click", () => showLobby());
-
-    function resizeCanvas() {
-      const parent = canvas.parentElement; if (!parent) return;
-      var dpr = window.devicePixelRatio || 1, rect = parent.getBoundingClientRect();
-      canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
-      canvas.style.width = rect.width + "px"; canvas.style.height = rect.height + "px";
-      if (gameState !== "playing") draw(rect.width, rect.height, rect.height * WORLD_GROUND_Y);
-    }
-    window.addEventListener("resize", resizeCanvas);
-    window.addEventListener('load', resizeCanvas);
-    setTimeout(resizeCanvas, 100);
-  </script>
-</body>
-</html>
+        <div class="flex flex-col gap-2 font-mono items-end">
+          <div class="
