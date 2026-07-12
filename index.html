@@ -4,11 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>戦慄迷宮 (Senritsu Meikyu)</title>
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Creepster&family=DotGothic16&display=swap" rel="stylesheet">
   
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -27,6 +30,7 @@
       font-family: 'Creepster', 'DotGothic16', cursive;
       text-shadow: 0 0 10px #ff0000, 0 0 25px #ff0000;
     }
+    /* スコア表示を大きくマイルドに発光 */
     .score-glow {
       text-shadow: 0 0 15px rgba(234, 179, 8, 0.95), 0 0 5px rgba(234, 179, 8, 0.5);
     }
@@ -40,6 +44,7 @@
       0% { transform: scale(0.95); opacity: 0.6; }
       100% { transform: scale(1.08); opacity: 1; }
     }
+    /* 紙吹雪のHTML要素アニメーション */
     .confetti {
       position: absolute;
       width: 10px;
@@ -57,12 +62,16 @@
 </head>
 <body class="w-full h-screen flex items-center justify-center p-2 sm:p-4">
 
+  <!-- 紙吹雪用コンテナ -->
   <div id="confetti-container" class="absolute inset-0 pointer-events-none overflow-hidden z-40"></div>
 
+  <!-- メインコンテナ -->
   <div class="relative w-full max-w-4xl h-[94vh] max-h-[800px] bg-neutral-950 border-4 border-red-950 rounded-xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
     
+    <!-- 左側 / 上部：ゲーム描画・操作エリア -->
     <div id="game-container" class="relative flex-1 h-[60%] md:h-full bg-black flex flex-col items-center justify-center overflow-hidden border-b-2 md:border-b-0 md:border-r-2 border-red-950/60 transition-all duration-300">
       
+      <!-- 1. ログイン/名前入力画面 -->
       <div id="screen-login" class="absolute inset-0 bg-black/95 flex flex-col items-center justify-center z-30 p-4 text-center">
         <h1 class="horror-title text-5xl md:text-6xl text-red-600 mb-1 tracking-wider animate-pulse">戦慄迷宮</h1>
         <p class="text-[11px] text-zinc-500 mb-6 tracking-widest font-bold">~ 旧長野中央高等学校の呪われた回廊 ~</p>
@@ -81,6 +90,7 @@
         </p>
       </div>
 
+      <!-- 2. ロビー / 待機画面 -->
       <div id="screen-lobby" class="absolute inset-0 bg-black/95 flex flex-col items-center justify-center z-20 p-4 text-center hidden">
         <h2 class="text-xl text-red-500 mb-3 tracking-wider font-bold">旧長野中央高等学校の廊下</h2>
         
@@ -105,7 +115,9 @@
         </div>
       </div>
 
+      <!-- 3. ゲームオーバー画面 -->
       <div id="screen-gameover" class="absolute inset-0 bg-black/95 flex flex-col items-center justify-center z-25 p-4 text-center hidden">
+        <!-- 祝福メッセージエリア -->
         <div id="celebration-badge" class="hidden mb-3 text-sm font-bold text-yellow-400 bg-yellow-950/40 border border-yellow-800 px-4 py-1.5 rounded-full animate-bounce">
           👑 オンラインランキング第1位に輝きました！ 👑
         </div>
@@ -138,11 +150,1557 @@
         </div>
       </div>
 
+      <!-- ゲームプレイ中のリアルタイムUI -->
       <div class="absolute top-0 inset-x-0 p-3 flex justify-between items-start pointer-events-none z-10 text-xs">
+        <!-- 左上：プレイヤー名とスピード -->
         <div class="bg-black/75 px-2.5 py-1.5 rounded border border-red-950/40 backdrop-blur-sm flex flex-col gap-1">
           <div><span class="text-zinc-500">走者:</span> <span id="ui-player-name" class="text-red-400 font-bold">---</span></div>
           <div><span class="text-zinc-500">SPEED:</span> <span id="ui-speed" class="text-red-500 font-bold font-mono">1.0x</span></div>
         </div>
         
+        <!-- 右上：現在のスコアと自分のハイスコア -->
         <div class="flex flex-col gap-2 font-mono items-end">
-          <div class="
+          <div class="bg-black/90 px-4 py-2 rounded-lg border border-yellow-600/50 backdrop-blur-md text-right min-w-[130px] shadow-lg">
+            <div class="text-[9px] text-yellow-600 leading-none mb-1 font-bold tracking-widest">CURRENT SCORE</div>
+            <div id="ui-score" class="text-yellow-400 font-black text-2xl leading-none score-glow">0</div>
+          </div>
+          <div class="bg-black/90 px-4 py-2 rounded-lg border border-green-600/50 backdrop-blur-md text-right min-w-[130px] shadow-lg">
+            <div class="text-[9px] text-green-500 leading-none mb-1 font-bold tracking-widest">HIGH SCORE</div>
+            <div id="ui-best" class="text-green-400 font-black text-xl leading-none best-glow">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- プレイ中の「自己ベスト更新中」演出バナー -->
+      <div id="ui-record-banner" class="absolute top-36 left-1/2 transform -translate-x-1/2 bg-red-950/80 border border-red-600/60 px-4 py-1.5 rounded shadow-lg pointer-events-none z-10 pulse-record text-red-500 font-bold text-xs tracking-widest hidden">
+        ⚠️ 自己新記録更新中！ ⚠️
+      </div>
+
+      <!-- 操作領域兼キャンバス -->
+      <canvas id="game-canvas" class="w-full h-full block cursor-pointer"></canvas>
+
+      <!-- タップ誘導 -->
+      <div class="absolute bottom-3 pointer-events-none text-[10px] text-zinc-500 animate-pulse bg-black/30 px-3 py-1 rounded-full border border-zinc-800/60">
+        画面をタップしてジャンプ！
+      </div>
+    </div>
+
+    <!-- 右側 / 下部：リアルタイムスコアボード -->
+    <div id="ranking-panel" class="w-full md:w-72 h-[40%] md:h-full bg-zinc-950 p-3 flex flex-col justify-between overflow-hidden transition-all duration-300">
+      <!-- ランキングエリア -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <div class="border-b border-red-950/60 pb-1.5 mb-2 flex justify-between items-center">
+          <div>
+            <h3 class="text-xs font-bold text-red-500 tracking-wider flex items-center gap-1.5">
+              <span class="inline-block w-1.5 h-1.5 rounded-full bg-red-600 animate-ping"></span>
+              旧長野中央高 ランキング (TOP 10)
+            </h3>
+            <p id="ranking-desc" class="text-[9px] text-zinc-600">読み込み中...</p>
+          </div>
+        </div>
+
+        <!-- スクロール可能なランキングリスト -->
+        <div id="ranking-list" class="flex-1 overflow-y-auto space-y-1.5 pr-1 text-xs">
+          <!-- 動的にランキングが作成されます -->
+        </div>
+      </div>
+
+      <!-- 自分の自己ベスト表示 -->
+      <div class="border-t border-zinc-900 pt-2.5 mt-2">
+        <div class="bg-zinc-900/40 p-2.5 rounded border border-zinc-800 flex justify-between items-center text-xs">
+          <div>
+            <p class="text-[9px] text-zinc-500">あなたの自己ベスト</p>
+            <p id="local-best-name" class="text-zinc-300 font-bold truncate max-w-[130px]">未登録</p>
+          </div>
+          <div class="text-right">
+            <p class="text-[8px] text-yellow-600">HIGH SCORE</p>
+            <p id="local-best-score" class="text-lg font-black text-yellow-500 font-mono score-glow">0</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- クレジット -->
+  <div class="absolute bottom-1 text-[8px] text-zinc-800 pointer-events-none">
+    © 2026 Senritsu Meikyu - Old Nagano Chuo High School.
+  </div>
+
+  <!-- Game Logic Script -->
+  <script>
+    // ゲーム状態を管理する変数
+    var gameState = "lobby"; 
+    
+    // --- ローカル用およびオンライン共通のステート ---
+    var playerName = localStorage.getItem("hgr_player_name") || "";
+    var localHighScore = parseInt(localStorage.getItem("hgr_high_score") || "0");
+    var rankings = [];
+    var hasAnnouncedRecordThisRun = false; 
+
+    // Firebase初期化状態フラグ
+    var isOnlineActive = false;
+    var app = null;
+    var auth = null;
+    var db = null;
+    var appId = 'senritsu-meikyu-nagano';
+    var user = null;
+
+    // 【Firebaseの超堅牢な初期化＆クラッシュ防止】
+    if (typeof firebase !== 'undefined') {
+      try {
+        var firebaseConfigStr = "";
+        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+          firebaseConfigStr = __firebase_config;
+        }
+        if (firebaseConfigStr) {
+          var firebaseConfig = JSON.parse(firebaseConfigStr);
+          app = firebase.initializeApp(firebaseConfig);
+          auth = firebase.auth();
+          db = firebase.firestore();
+          if (typeof __app_id !== 'undefined' && __app_id) {
+            appId = __app_id;
+          }
+          isOnlineActive = true;
+          document.getElementById("ranking-desc").textContent = "オンライン接続中...";
+        }
+      } catch (e) {
+        console.warn("Firebase initialization skipped. Local storage mode.", e);
+        isOnlineActive = false;
+      }
+    }
+
+    // UIエレメントの取得
+    const screenLogin = document.getElementById("screen-login");
+    const screenLobby = document.getElementById("screen-lobby");
+    const screenGameover = document.getElementById("screen-gameover");
+    const inputName = document.getElementById("player-name-input");
+    const btnStart = document.getElementById("btn-start");
+    const btnReady = document.getElementById("btn-ready");
+    const btnChangeName = document.getElementById("btn-change-name");
+    const btnRestart = document.getElementById("btn-restart");
+    const btnToLobby = document.getElementById("btn-to-lobby");
+
+    const uiPlayerName = document.getElementById("ui-player-name");
+    const uiScore = document.getElementById("ui-score");
+    const uiBest = document.getElementById("ui-best");
+    const uiSpeed = document.getElementById("ui-speed");
+    const uiRecordBanner = document.getElementById("ui-record-banner");
+
+    const celebrationBadge = document.getElementById("celebration-badge");
+    const newBestBadge = document.getElementById("new-best-badge");
+    const goScore = document.getElementById("go-score");
+    const goBest = document.getElementById("go-best");
+    
+    const rankingList = document.getElementById("ranking-list");
+    const localBestName = document.getElementById("local-best-name");
+    const localBestScore = document.getElementById("local-best-score");
+
+    const canvas = document.getElementById("game-canvas");
+    const ctx = canvas.getContext("2d");
+
+    const rankingPanel = document.getElementById("ranking-panel");
+    const gameContainer = document.getElementById("game-container");
+    const confettiContainer = document.getElementById("confetti-container");
+
+    // --- 効果音合成 (Web Audio API) ---
+    var audioCtx = null;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) {
+      console.warn("AudioContext not supported");
+    }
+    
+    function playTone(freq, type, duration, volume) {
+      if (!audioCtx) return;
+      try {
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playJumpSound() {
+      playTone(200, 'triangle', 0.15, 0.15);
+      setTimeout(function() { playTone(350, 'triangle', 0.2, 0.1); }, 50);
+    }
+
+    function playDoubleJumpSound() {
+      playTone(450, 'sine', 0.1, 0.15);
+      setTimeout(function() { playTone(650, 'sine', 0.15, 0.1); }, 30);
+    }
+
+    function playGetSound() {
+      playTone(1050, 'sine', 0.08, 0.12);
+      setTimeout(function() { playTone(1550, 'sine', 0.12, 0.08); }, 50);
+    }
+
+    function playHurtSound() {
+      playTone(80, 'sawtooth', 0.6, 0.35);
+      playTone(85, 'square', 0.5, 0.2);
+      playTone(130, 'sawtooth', 0.6, 0.2);
+    }
+
+    function playFanfareNewBest() {
+      playTone(523.25, 'sine', 0.12, 0.2); 
+      setTimeout(function() { playTone(659.25, 'sine', 0.12, 0.2); }, 120); 
+      setTimeout(function() { playTone(783.99, 'sine', 0.12, 0.2); }, 240); 
+      setTimeout(function() { playTone(1046.50, 'sine', 0.4, 0.25); }, 360); 
+    }
+
+    function playFanfareNumberOne() {
+      playTone(523.25, 'square', 0.15, 0.15); 
+      setTimeout(function() { playTone(523.25, 'square', 0.15, 0.15); }, 150);
+      setTimeout(function() { playTone(523.25, 'square', 0.15, 0.15); }, 300);
+      setTimeout(function() { playTone(659.25, 'square', 0.15, 0.15); }, 450); 
+      setTimeout(function() { playTone(587.33, 'square', 0.15, 0.15); }, 600); 
+      setTimeout(function() { playTone(659.25, 'square', 0.15, 0.15); }, 750); 
+      setTimeout(function() { playTone(783.99, 'square', 0.15, 0.15); }, 900); 
+      setTimeout(function() { playTone(1046.50, 'square', 0.6, 0.25); }, 1050); 
+    }
+
+    function playNewRecordSignal() {
+      playTone(880, 'sine', 0.2, 0.15);
+      setTimeout(function() { playTone(1100, 'sine', 0.3, 0.15); }, 100);
+    }
+
+    // --- Firebase Auth 認証 ---
+    if (isOnlineActive && auth) {
+      try {
+        var initAuth = async function() {
+          try {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+              await auth.signInWithCustomToken(__initial_auth_token);
+            } else {
+              await auth.signInAnonymously();
+            }
+          } catch (err) {
+            console.warn("Auth initialization failed. Local mode active.", err);
+            isOnlineActive = false;
+            loadRankings();
+          }
+        };
+        initAuth();
+
+        auth.onAuthStateChanged((u) => {
+          user = u;
+          setupRankingListener();
+          syncLocalScore();
+        });
+      } catch (e) {
+        console.warn("Auth setup failed.", e);
+        isOnlineActive = false;
+        setupRankingListener();
+        syncLocalScore();
+      }
+    } else {
+      setupRankingListener();
+      syncLocalScore();
+    }
+
+    // 画面初期状態
+    if (playerName) {
+      inputName.value = playerName;
+      showLobby();
+    } else {
+      showLogin();
+    }
+
+    function showLogin() {
+      screenLogin.classList.remove("hidden");
+      screenLobby.classList.add("hidden");
+      screenGameover.classList.add("hidden");
+      updateScreenLayout("login");
+    }
+
+    function showLobby() {
+      screenLogin.classList.add("hidden");
+      screenLobby.classList.remove("hidden");
+      screenGameover.classList.add("hidden");
+      localBestName.textContent = playerName || "未登録";
+      localBestScore.textContent = localHighScore;
+      uiBest.textContent = localHighScore;
+      
+      // キャッシュからローカルランキングデータをロードして0秒で表示
+      loadLocalCacheFirst();
+      
+      setupRankingListener();
+      updateScreenLayout("lobby");
+    }
+
+    function updateScreenLayout(state) {
+      if (!rankingPanel || !gameContainer) return;
+      if (state === "playing") {
+        rankingPanel.classList.add("hidden");
+        gameContainer.classList.remove("h-[60%]", "md:h-full");
+        gameContainer.classList.add("h-full", "w-full");
+      } else {
+        rankingPanel.classList.remove("hidden");
+        gameContainer.classList.add("h-[60%]", "md:h-full");
+        gameContainer.classList.remove("h-full", "w-full");
+      }
+      setTimeout(resizeCanvas, 50);
+    }
+
+    // 「校舎に入る」
+    btnStart.addEventListener("click", function() {
+      var val = inputName.value.trim();
+      if (!val) val = "名無しの走者";
+      playerName = val;
+      localStorage.setItem("hgr_player_name", playerName);
+      try {
+        playTone(440, 'sine', 0.15, 0.1);
+      } catch (e) {}
+      showLobby();
+    });
+
+    btnChangeName.addEventListener("click", function() {
+      showLogin();
+    });
+
+    // キャッシュをロードする機能
+    function loadLocalCacheFirst() {
+      var saved = localStorage.getItem("hgr_rankings");
+      var tempRankings = [];
+      if (saved) {
+        try {
+          tempRankings = JSON.parse(saved);
+        } catch (e) {
+          tempRankings = [];
+        }
+      }
+      
+      // 【バグ防止】破損したデータ（中身が不完全な要素）を自動的にお掃除
+      tempRankings = tempRankings.filter(function(item) {
+        return item && typeof item === 'object' && item.playerName && item.score !== undefined;
+      });
+
+      if (playerName && localHighScore > 0) {
+        var exist = tempRankings.some(function(item) { return item && item.playerName === playerName; });
+        if (!exist) {
+          tempRankings.push({
+            userId: user ? user.uid : "local_user",
+            playerName: playerName,
+            score: localHighScore
+          });
+        }
+      }
+
+      // 数値化して降順に並び替え
+      tempRankings.sort(function(a, b) { 
+        var scoreA = a ? Number(a.score) || 0 : 0;
+        var scoreB = b ? Number(b.score) || 0 : 0;
+        return scoreB - scoreA; 
+      });
+      rankings = tempRankings.slice(0, 10);
+      updateRankingUI();
+    }
+
+    function loadRankings() {
+      loadLocalCacheFirst();
+    }
+
+    // 【フリーズの引き金を完全排除したセーフティセーブ】
+    function saveLocalRankings(newPlayerName, newScore) {
+      if (!newPlayerName) return;
+      
+      var saved = localStorage.getItem("hgr_rankings");
+      var tempRankings = [];
+      if (saved) {
+        try {
+          tempRankings = JSON.parse(saved);
+        } catch (e) {
+          tempRankings = [];
+        }
+      }
+      
+      // 破損データのお掃除フィルター
+      tempRankings = tempRankings.filter(function(item) {
+        return item && typeof item === 'object' && item.playerName && item.score !== undefined;
+      });
+      
+      var found = false;
+      for (var i = 0; i < tempRankings.length; i++) {
+        if (tempRankings[i] && tempRankings[i].playerName === newPlayerName) {
+          var currentScore = Number(tempRankings[i].score) || 0;
+          if (newScore > currentScore) {
+            tempRankings[i].score = Number(newScore) || 0;
+          }
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        tempRankings.push({
+          userId: (user ? user.uid : "user_" + Date.now()),
+          playerName: newPlayerName,
+          score: Number(newScore) || 0
+        });
+      }
+      
+      // NaNを完全に防ぐセーフティソート
+      tempRankings.sort(function(a, b) { 
+        var scoreA = a ? Number(a.score) || 0 : 0;
+        var scoreB = b ? Number(b.score) || 0 : 0;
+        return scoreB - scoreA; 
+      });
+      rankings = tempRankings.slice(0, 10);
+      
+      try {
+        localStorage.setItem("hgr_rankings", JSON.stringify(rankings));
+      } catch (e) {
+        console.warn("localStorage write error:", e);
+      }
+      
+      updateRankingUI();
+    }
+
+    // --- 【リアルタイムオンライン同期】 ---
+    function setupRankingListener() {
+      if (!isOnlineActive || !db || !appId) {
+        loadLocalCacheFirst();
+        if (document.getElementById("ranking-desc")) {
+          document.getElementById("ranking-desc").textContent = "ローカル同期中";
+        }
+        return;
+      }
+
+      try {
+        var scoreCol = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('runnerscores');
+        
+        scoreCol.onSnapshot((snapshot) => {
+          var rawScores = [];
+          snapshot.forEach((doc) => {
+            if (doc.exists) {
+              var data = doc.data();
+              if (data && data.playerName && data.score !== undefined) {
+                rawScores.push(data);
+              }
+            }
+          });
+
+          // マージ
+          var mergedList = [...rawScores];
+          
+          var localSaved = localStorage.getItem("hgr_rankings");
+          if (localSaved) {
+            try {
+              var locRank = JSON.parse(localSaved) || [];
+              locRank.forEach(function(lItem) {
+                if (lItem && lItem.playerName && !mergedList.some(function(mItem) { return mItem && mItem.playerName === lItem.playerName; })) {
+                  mergedList.push(lItem);
+                }
+              });
+            } catch(e){}
+          }
+
+          // 安全ソート
+          rankings = mergedList
+            .filter(function(item) {
+              return item && typeof item === 'object' && item.playerName && item.score !== undefined;
+            })
+            .sort((a, b) => {
+              var scoreA = a ? Number(a.score) || 0 : 0;
+              var scoreB = b ? Number(b.score) || 0 : 0;
+              return scoreB - scoreA;
+            })
+            .slice(0, 10);
+
+          if (document.getElementById("ranking-desc")) {
+            document.getElementById("ranking-desc").textContent = "オンライン同期完了";
+          }
+          updateRankingUI();
+        }, (err) => {
+          console.warn("Firestore snapshot error. Running with local storage.");
+          isOnlineActive = false;
+          if (document.getElementById("ranking-desc")) {
+            document.getElementById("ranking-desc").textContent = "ローカル同期中";
+          }
+          loadLocalCacheFirst();
+        });
+      } catch (e) {
+        isOnlineActive = false;
+        loadLocalCacheFirst();
+      }
+    }
+
+    function updateRankingUI() {
+      if (!rankingList) return;
+      rankingList.innerHTML = "";
+      
+      if (!rankings || rankings.length === 0) {
+        rankingList.innerHTML = `<div class="text-center text-zinc-600 py-12 px-2 border border-zinc-900 border-dashed rounded-lg bg-zinc-950/30">
+          <p class="mb-1 text-zinc-500">ランキングデータがありません</p>
+          <p class="text-[9px] text-red-700 tracking-wider">最初の探索者になって記録を刻め！</p>
+        </div>`;
+        return;
+      }
+
+      rankings.forEach(function(item, index) {
+        if (!item || !item.playerName) return;
+        var isMe = (item.playerName === playerName);
+        var rankClass = index === 0 ? "text-yellow-400 font-bold" : index === 1 ? "text-slate-300" : index === 2 ? "text-amber-600" : "text-zinc-500";
+        var bgClass = isMe ? "bg-red-950/40 border border-red-900/30" : "bg-zinc-900/30 border border-zinc-950";
+
+        var div = document.createElement("div");
+        div.className = "flex justify-between items-center p-1.5 rounded " + bgClass + " transition-all";
+        div.innerHTML = `
+          <div class="flex items-center gap-1.5 overflow-hidden mr-1">
+            <span class="w-4 text-center ${rankClass} font-mono">${index + 1}</span>
+            <span class="truncate ${isMe ? 'text-red-400 font-bold' : 'text-zinc-300'}">${escapeHTML(item.playerName)}</span>
+          </div>
+          <span class="font-bold text-yellow-500 font-mono">${Number(item.score) || 0}</span>
+        `;
+        rankingList.appendChild(div);
+      });
+    }
+
+    function escapeHTML(str) {
+      if (!str) return "";
+      return String(str).replace(/[&<>'"]/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[m] || m;
+      });
+    }
+
+    async function syncLocalScore() {
+      if (!playerName) return;
+      if (!isOnlineActive || !user || !db) {
+        localBestName.textContent = playerName;
+        localBestScore.textContent = localHighScore;
+        uiBest.textContent = localHighScore;
+        return;
+      }
+
+      try {
+        var scoreDocRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('runnerscores').doc(user.uid);
+        var snap = await scoreDocRef.get();
+        var cloudScore = 0;
+        if (snap.exists) {
+          var sData = snap.data();
+          cloudScore = sData ? (Number(sData.score) || 0) : 0;
+        }
+
+        if (localHighScore > cloudScore) {
+          await scoreDocRef.set({
+            userId: user.uid,
+            playerName: playerName,
+            score: Number(localHighScore) || 0,
+            updatedAt: Date.now()
+          });
+        } else if (cloudScore > localHighScore) {
+          localHighScore = cloudScore;
+          localStorage.setItem("hgr_high_score", localHighScore.toString());
+        }
+
+        localBestName.textContent = playerName;
+        localBestScore.textContent = localHighScore;
+        uiBest.textContent = localHighScore;
+      } catch (e) {
+        localBestName.textContent = playerName;
+        localBestScore.textContent = localHighScore;
+        uiBest.textContent = localHighScore;
+      }
+    }
+
+    // 鉄壁のフリーズガード付きオンラインスコア保存
+    async function uploadScore(score) {
+      if (!playerName) return;
+      var numScore = Number(score) || 0;
+      if (numScore > localHighScore) {
+        localHighScore = numScore;
+        localStorage.setItem("hgr_high_score", localHighScore.toString());
+        
+        if (localBestScore) localBestScore.textContent = localHighScore;
+        if (uiBest) uiBest.textContent = localHighScore;
+
+        if (!isOnlineActive || !user || !db) return;
+
+        try {
+          var scoreDocRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('runnerscores').doc(user.uid);
+          await scoreDocRef.set({
+            userId: user.uid,
+            playerName: playerName,
+            score: Number(localHighScore) || 0,
+            updatedAt: Date.now()
+          });
+        } catch (e) {
+          console.warn("Silent upload fail (ignored)", e);
+        }
+      }
+    }
+
+    function spawnConfetti(isGrandPrize) {
+      if (!confettiContainer) return;
+      confettiContainer.innerHTML = "";
+      var colors = isGrandPrize 
+        ? ["#fbbf24", "#f59e0b", "#fff", "#ef4444", "#dc2626"] 
+        : ["#4ade80", "#22c55e", "#fff", "#3b82f6", "#ef4444"]; 
+      
+      var count = isGrandPrize ? 120 : 60;
+      for (var i = 0; i < count; i++) {
+        var confetti = document.createElement("div");
+        confetti.className = "confetti";
+        confetti.style.left = Math.random() * 100 + "vw";
+        confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.transform = "scale(" + (0.4 + Math.random() * 0.8) + ")";
+        confetti.style.animationDelay = Math.random() * 0.8 + "s";
+        confetti.style.animationDuration = (1.5 + Math.random() * 2) + "s";
+        confettiContainer.appendChild(confetti);
+      }
+    }
+
+
+    // ==========================================
+    //       🏃‍♂️ ゲーム本体のロジック (RUN & JUMP) 🏃‍♂️
+    // ==========================================
+
+    var gameScore = 0;
+    var distanceCount = 0; 
+    var spiritPoints = 0; 
+    
+    const INITIAL_SPEED = 5.0;
+    const MAX_SPEED = 11.0;
+    const ACCEL_RATE = 480;
+
+    var runSpeed = INITIAL_SPEED; 
+    var lastTime = 0;
+
+    const GRAVITY = 0.54;
+    const JUMP_FORCE = -8.8;
+    const WORLD_GROUND_Y = 0.78; 
+
+    var runner = {
+      x: 100,
+      y: 0,
+      width: 24,
+      height: 38,
+      vy: 0,
+      isGrounded: false,
+      jumpCount: 0,
+      animFrame: 0,
+      rotation: 0
+    };
+
+    var scorePopTime = 0;
+
+    var backgroundAssets = [];
+    var obstacles = [];
+    var spirits = [];
+    var particles = [];
+
+    function initBackground() {
+      backgroundAssets = [];
+      for (var i = 0; i < 6; i++) {
+        backgroundAssets.push({
+          x: i * 220,
+          type: i % 2 === 0 ? 'door' : 'window',
+          width: i % 2 === 0 ? 50 : 70,
+          height: i % 2 === 0 ? 110 : 70
+        });
+      }
+    }
+
+    function spawnSparkParticles(x, y) {
+      for (var i = 0; i < 15; i++) {
+        var angle = Math.random() * Math.PI * 2;
+        var speed = 2 + Math.random() * 4;
+        particles.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 1, 
+          radius: 2.5 + Math.random() * 3,
+          color: "hsl(" + (40 + Math.random() * 20) + ", 100%, " + (60 + Math.random() * 30) + "%)", 
+          life: 1.0,
+          decay: 0.035 + Math.random() * 0.03
+        });
+      }
+    }
+
+    var obstacleTimer = 0;
+
+    function updateObstaclesAndSpirits(canvasWidth, canvasHeight) {
+      var groundY = canvasHeight * WORLD_GROUND_Y;
+      var dynamicInterval = Math.max(55, 95 - (runSpeed - INITIAL_SPEED) * 10);
+
+      obstacleTimer++;
+      if (obstacleTimer > dynamicInterval + Math.random() * 60) {
+        obstacleTimer = 0;
+        
+        var randType = Math.random();
+        if (randType < 0.45) {
+          obstacles.push({
+            x: canvasWidth + 50,
+            y: groundY - 28,
+            width: 28,
+            height: 28,
+            type: 'ground',
+            spriteType: Math.random() > 0.5 ? 'head' : 'anatomical',
+            pulse: Math.random() * 10
+          });
+        } 
+        else if (randType < 0.75) {
+          obstacles.push({
+            x: canvasWidth + 50,
+            y: groundY - 70 - Math.random() * 50,
+            width: 28,
+            height: 28,
+            type: 'air',
+            pulse: Math.random() * Math.PI * 2
+          });
+        } 
+        else {
+          obstacles.push({
+            x: canvasWidth + 50,
+            y: groundY,
+            width: 45 + Math.random() * 25,
+            height: canvasHeight - groundY,
+            type: 'pit'
+          });
+        }
+
+        if (Math.random() < 0.85) {
+          var sy = groundY - 55 - Math.random() * 50;
+          for (var k = 0; k < 3; k++) {
+            spirits.push({
+              x: canvasWidth + 120 + k * 35,
+              y: sy - (k === 1 ? 15 : 0),
+              collected: false,
+              pulse: Math.random() * Math.PI
+            });
+          }
+        }
+      }
+
+      for (var i = obstacles.length - 1; i >= 0; i--) {
+        var obs = obstacles[i];
+        obs.x -= runSpeed;
+
+        if (obs.pulse !== undefined) obs.pulse += 0.15;
+
+        if (checkCollision(runner, obs, canvasHeight)) {
+          triggerGameOver();
+          return;
+        }
+
+        if (obs.x + obs.width < -120) {
+          obstacles.splice(i, 1);
+        }
+      }
+
+      for (var i = spirits.length - 1; i >= 0; i--) {
+        var sp = spirits[i];
+        sp.x -= runSpeed;
+        sp.pulse += 0.12;
+
+        var rx = runner.x + runner.width / 2;
+        var ry = runner.y + runner.height / 2;
+        var dist = Math.hypot(rx - sp.x, ry - sp.y);
+        
+        if (!sp.collected && dist < 28) {
+          sp.collected = true;
+          spiritPoints += 100; 
+          
+          scorePopTime = 15; // スコア獲得アニメーション開始
+
+          uiScore.classList.add("scale-110", "text-white");
+          setTimeout(function() { uiScore.classList.remove("scale-110", "text-white"); }, 150);
+
+          spawnSparkParticles(sp.x, sp.y);
+          playGetSound();
+        }
+
+        if (sp.x < -50 || sp.collected) {
+          spirits.splice(i, 1);
+        }
+      }
+
+      for (var i = particles.length - 1; i >= 0; i--) {
+        var p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.08; 
+        p.life -= p.decay;
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+    }
+
+    function checkCollision(player, obs, canvasHeight) {
+      var px1 = player.x;
+      var px2 = player.x + player.width;
+      var py1 = player.y;
+      var py2 = player.y + player.height;
+
+      if (obs.type === 'pit') {
+        var buffer = 5; 
+        if (px2 - buffer > obs.x && px1 + buffer < obs.x + obs.width) {
+          if (py2 >= canvasHeight * WORLD_GROUND_Y - 3) {
+            player.isGrounded = false; 
+            return false; 
+          }
+        }
+      } else {
+        var ox1 = obs.x;
+        var ox2 = obs.x + obs.width;
+        var oy1 = obs.y;
+        var oy2 = obs.y + obs.height;
+
+        return px1 < ox2 && px2 > ox1 && py1 < oy2 && py2 > oy1;
+      }
+      return false;
+    }
+
+    function startGame() {
+      gameState = "playing";
+      gameScore = 0;
+      distanceCount = 0;
+      spiritPoints = 0; 
+      runSpeed = INITIAL_SPEED; 
+      obstacleTimer = 0;
+      obstacles = [];
+      spirits = [];
+      particles = [];
+      hasAnnouncedRecordThisRun = false;
+      scorePopTime = 0;
+
+      uiScore.textContent = gameScore;
+      uiSpeed.textContent = "1.0x";
+      uiPlayerName.textContent = playerName;
+      uiBest.textContent = localHighScore;
+
+      uiRecordBanner.classList.add("hidden");
+      celebrationBadge.classList.add("hidden");
+      newBestBadge.classList.add("hidden");
+      confettiContainer.innerHTML = "";
+
+      screenLobby.classList.add("hidden");
+      screenGameover.classList.add("hidden");
+
+      updateScreenLayout("playing");
+
+      var groundY = canvas.height * WORLD_GROUND_Y;
+      runner.y = groundY - runner.height;
+      runner.vy = 0;
+      runner.isGrounded = true;
+      runner.jumpCount = 0;
+      runner.rotation = 0;
+
+      initBackground();
+
+      obstacleTimer = -130;
+
+      lastTime = performance.now();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // 【修正：全工程を1行レベルで完全にtry-catch分割し、絶対にクラッシュさせない極限ガード】
+    function triggerGameOver() {
+      gameState = "gameover";
+      
+      // 1. サウンド再生
+      try { playHurtSound(); } catch (e) {}
+
+      // 2. 得点UI反映
+      try {
+        if (goScore) goScore.textContent = gameScore;
+        if (goBest) goBest.textContent = Math.max(gameScore, localHighScore);
+      } catch (e) {}
+
+      // 3. バナー非表示
+      try { if (uiRecordBanner) uiRecordBanner.classList.add("hidden"); } catch (e) {}
+
+      // 4. ハイスコア・1位判定
+      var isNewLocalBest = false;
+      var isNumberOne = false;
+      try {
+        isNewLocalBest = gameScore > localHighScore;
+        if (rankings && rankings.length > 0 && rankings[0]) {
+          var topScore = Number(rankings[0].score) || 0;
+          isNumberOne = gameScore > topScore;
+        } else {
+          isNumberOne = gameScore > 0;
+        }
+      } catch (e) {}
+
+      // 5. ローカルへのランキングセーブ
+      try {
+        saveLocalRankings(playerName, gameScore);
+      } catch (err) {
+        console.error("Local ranking save fallback failed:", err);
+      }
+
+      // 6. ブラウザ内でのローカルハイスコア保存
+      try {
+        if (isNewLocalBest) {
+          localHighScore = gameScore;
+          localStorage.setItem("hgr_high_score", localHighScore.toString());
+        }
+      } catch (e) {}
+
+      // 7. 演出・ファンファーレ・紙吹雪
+      try {
+        if (isNumberOne) {
+          if (celebrationBadge) celebrationBadge.classList.remove("hidden");
+          spawnConfetti(true);
+          playFanfareNumberOne();
+        } else if (isNewLocalBest) {
+          if (newBestBadge) newBestBadge.classList.remove("hidden");
+          spawnConfetti(false);
+          playFanfareNewBest();
+        }
+      } catch (e) {}
+
+      // 8. オンラインへのスコア非同期送信
+      try {
+        uploadScore(gameScore);
+      } catch (err) {
+        console.warn("Upload score deferred:", err);
+      }
+
+      // 9. ゲームオーバー画面への遷移（これらが必ず最後に走り画面を表示させます）
+      try {
+        updateScreenLayout("gameover");
+      } catch (e) {}
+      
+      try {
+        if (screenGameover) screenGameover.classList.remove("hidden");
+      } catch (e) {}
+    }
+
+    const handleAction = () => {
+      if (gameState !== "playing") return;
+
+      if (runner.isGrounded) {
+        runner.vy = JUMP_FORCE;
+        runner.isGrounded = false;
+        runner.jumpCount = 1;
+        playJumpSound();
+      } else if (runner.jumpCount < 2) {
+        runner.vy = JUMP_FORCE * 0.88;
+        runner.jumpCount = 2;
+        runner.rotation = -Math.PI; 
+        playDoubleJumpSound();
+      }
+    };
+
+    canvas.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      handleAction();
+    }, { passive: false });
+
+    canvas.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      handleAction();
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space" || e.key === " " || e.code === "ArrowUp") {
+        e.preventDefault();
+        handleAction();
+      }
+    });
+
+    function gameLoop(timestamp) {
+      if (gameState !== "playing") return;
+
+      var delta = (timestamp - lastTime) / 1000;
+      lastTime = timestamp;
+
+      var groundY = canvas.height * WORLD_GROUND_Y;
+
+      // 【1メートルにつき 1点】
+      distanceCount += runSpeed * 0.15; 
+      gameScore = Math.floor(distanceCount) + spiritPoints; 
+
+      uiScore.textContent = Math.floor(gameScore);
+
+      // リアルタイムハイスコア更新中の演出
+      if (localHighScore > 0 && gameScore > localHighScore && !hasAnnouncedRecordThisRun) {
+        hasAnnouncedRecordThisRun = true;
+        uiRecordBanner.classList.remove("hidden");
+        playNewRecordSignal();
+      }
+
+      runSpeed = INITIAL_SPEED + (distanceCount / ACCEL_RATE);
+      if (runSpeed > MAX_SPEED) runSpeed = MAX_SPEED; 
+
+      var speedMultiplier = (runSpeed / INITIAL_SPEED).toFixed(1);
+      uiSpeed.textContent = speedMultiplier + "x";
+
+      runner.vy += GRAVITY;
+      runner.y += runner.vy;
+
+      if (runner.rotation < 0) {
+        runner.rotation += 0.18;
+        if (runner.rotation > 0) runner.rotation = 0;
+      }
+
+      if (runner.y + runner.height >= groundY) {
+        var pxCenter = runner.x + runner.width / 2;
+        var isOverPit = obstacles.some(function(obs) { return obs.type === 'pit' && pxCenter > obs.x && pxCenter < obs.x + obs.width; });
+        
+        if (!isOverPit) {
+          runner.y = groundY - runner.height;
+          runner.vy = 0;
+          runner.isGrounded = true;
+          runner.jumpCount = 0;
+          runner.rotation = 0;
+        }
+      }
+
+      if (runner.y > canvas.height + 50) {
+        triggerGameOver();
+        return;
+      }
+
+      if (runner.isGrounded) {
+        runner.animFrame += runSpeed * 0.055;
+      }
+
+      backgroundAssets.forEach(function(bg) {
+        bg.x -= runSpeed * 0.38; 
+        if (bg.x + bg.width < -120) {
+          bg.x = canvas.width + 100 + Math.random() * 120;
+          bg.type = Math.random() > 0.5 ? 'door' : 'window';
+        }
+      });
+
+      updateObstaclesAndSpirits(canvas.width, canvas.height);
+      
+      if (scorePopTime > 0) {
+        scorePopTime--;
+      }
+
+      draw();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+
+    // ==========================================
+    //            🎨 描画システム (CANVAS) 🎨
+    // ==========================================
+
+    function draw() {
+      const cw = canvas.width;
+      const ch = canvas.height;
+      const groundY = ch * WORLD_GROUND_Y;
+
+      ctx.fillStyle = "#0c080d";
+      ctx.fillRect(0, 0, cw, ch);
+
+      const skyGrad = ctx.createRadialGradient(cw / 2, ch / 3, 5, cw / 2, ch / 3, cw * 0.8);
+      skyGrad.addColorStop(0, "rgba(85, 12, 12, 0.48)"); 
+      skyGrad.addColorStop(0.5, "rgba(22, 12, 28, 0.2)");
+      skyGrad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, cw, ch);
+
+      ctx.fillStyle = "#160e1a"; 
+      backgroundAssets.forEach(function(bg) {
+        const by = groundY - bg.height;
+        ctx.fillRect(bg.x, by, bg.width, bg.height);
+
+        if (bg.type === 'door') {
+          ctx.strokeStyle = "#08040a";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(bg.x + 3, by + 3, bg.width - 6, bg.height - 3);
+          ctx.fillStyle = "#5c0505";
+          ctx.beginPath();
+          ctx.arc(bg.x + bg.width - 8, by + bg.height / 2, 3, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.strokeStyle = "#2e1212";
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(bg.x + 5, by + 5, bg.width - 10, bg.height - 10);
+          ctx.beginPath();
+          ctx.moveTo(bg.x + bg.width / 2, by + 5);
+          ctx.lineTo(bg.x + bg.width / 2, by + bg.height - 5);
+          ctx.moveTo(bg.x + 5, by + bg.height / 2);
+          ctx.lineTo(bg.x + bg.width - 5, by + bg.height / 2);
+          ctx.stroke();
+
+          ctx.fillStyle = "rgba(185, 28, 28, 0.15)";
+          ctx.fillRect(bg.x + 6, by + 6, bg.width - 12, bg.height - 12);
+        }
+      });
+
+      drawFloor(cw, ch, groundY);
+      drawObstacles(groundY);
+      drawSpirits();
+      drawParticles();
+      drawRunner();
+      
+      // 暗闇マスク
+      drawFlashlightOverlay(cw, ch);
+
+      // 中間発光による現在スコア
+      drawRunningScore();
+    }
+
+    function drawFloor(cw, ch, groundY) {
+      ctx.fillStyle = "#1a0f0f"; 
+      ctx.fillRect(0, groundY, cw, ch - groundY);
+
+      ctx.strokeStyle = "#0d0606";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, groundY);
+      ctx.lineTo(cw, groundY);
+      ctx.stroke();
+
+      ctx.strokeStyle = "#100808";
+      ctx.lineWidth = 1;
+      for (var y = groundY + 8; y < ch; y += 12) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(cw, y);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = "#000000";
+      obstacles.forEach(function(obs) {
+        if (obs.type === 'pit') {
+          ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+          ctx.strokeStyle = "#450a0a";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(obs.x, obs.y);
+          ctx.lineTo(obs.x, obs.y + 12);
+          ctx.moveTo(obs.x + obs.width, obs.y);
+          ctx.lineTo(obs.x + obs.width, obs.y + 12);
+          ctx.stroke();
+        }
+      });
+    }
+
+    function drawObstacles(groundY) {
+      obstacles.forEach(function(obs) {
+        if (obs.type === 'pit') return;
+
+        ctx.save();
+        ctx.translate(obs.x, obs.y);
+
+        if (obs.type === 'ground') {
+          if (obs.spriteType === 'head') {
+            var hairWiggle = Math.sin(obs.pulse) * 4;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "rgba(147, 197, 253, 0.5)";
+
+            ctx.fillStyle = "#0c0a0f";
+            ctx.beginPath();
+            ctx.moveTo(-6, -6);
+            ctx.bezierCurveTo(-15, obs.height / 2 + hairWiggle, -12, obs.height + 4, -8, obs.height + 8);
+            ctx.lineTo(obs.width / 2, 0);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(obs.width + 6, -6);
+            ctx.bezierCurveTo(obs.width + 15, obs.height / 2 - hairWiggle, obs.width + 12, obs.height + 4, obs.width + 8, obs.height + 8);
+            ctx.lineTo(obs.width / 2, 0);
+            ctx.fill();
+
+            ctx.fillStyle = "#cbd5e1"; 
+            ctx.beginPath();
+            ctx.arc(obs.width / 2, obs.height / 2, obs.width / 2.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#0c0a0f";
+            ctx.fillRect(4, 2, obs.width - 8, 6);
+            ctx.beginPath();
+            ctx.moveTo(4, 8);
+            ctx.lineTo(obs.width / 2, 12);
+            ctx.lineTo(obs.width - 4, 8);
+            ctx.fill();
+
+            ctx.fillStyle = "#fee2e2"; 
+            ctx.beginPath();
+            ctx.arc(obs.width / 2 - 4, obs.height / 2, 3.5, 0, Math.PI * 2);
+            ctx.arc(obs.width / 2 + 4, obs.height / 2, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#ef4444"; 
+            ctx.fillRect(obs.width / 2 - 5, obs.height / 2 - 1, 2, 2);
+            ctx.fillRect(obs.width / 2 + 3, obs.height / 2 - 1, 2, 2);
+
+            ctx.fillStyle = "#dc2626"; 
+            ctx.fillRect(obs.width / 2 - 3, obs.height / 2 + 6, 6, 2);
+            ctx.fillRect(obs.width / 2 - 1, obs.height / 2 + 8, 2, 4); 
+
+            ctx.shadowBlur = 0; 
+          } 
+          else if (obs.spriteType === 'anatomical') {
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "rgba(220, 38, 38, 0.4)";
+
+            ctx.fillStyle = "#1e1b4b"; 
+            ctx.fillRect(3, 0, obs.width - 6, obs.height);
+
+            ctx.fillStyle = "#b91c1c";
+            ctx.fillRect(obs.width / 2, 4, obs.width / 2 - 3, obs.height - 4);
+
+            ctx.fillStyle = "#f1f5f9";
+            ctx.fillRect(3, 4, obs.width / 2 - 3, obs.height - 12);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.arc(obs.width / 2, 5, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#000";
+            ctx.fillRect(obs.width / 2 - 3, 4, 2, 2);
+            ctx.fillStyle = "#ef4444";
+            ctx.fillRect(obs.width / 2 + 1, 4, 2, 2);
+
+            ctx.fillStyle = "#f8fafc";
+            ctx.fillRect(4, 15, 6, 2);
+            ctx.fillRect(4, 19, 6, 2);
+            ctx.fillStyle = "#7f1d1d";
+            ctx.fillRect(obs.width / 2, 17, 8, 3);
+
+            ctx.shadowBlur = 0;
+          }
+        } 
+        else if (obs.type === 'air') {
+          var floatOffset = Math.sin(obs.pulse) * 4;
+          ctx.shadowBlur = 15;
+          ctx.shadowColor = "rgba(34, 211, 238, 0.7)";
+
+          var tailAngle = obs.pulse;
+          ctx.fillStyle = "rgba(165, 243, 252, 0.8)";
+          ctx.beginPath();
+          ctx.moveTo(obs.width / 2 - 8, obs.height / 2 + floatOffset);
+          ctx.bezierCurveTo(
+            obs.width / 2 - 12, obs.height + floatOffset + 12,
+            obs.width / 2 - 4 + Math.sin(tailAngle)*8, obs.height + floatOffset + 18,
+            obs.width / 2 + Math.sin(tailAngle)*6, obs.height + floatOffset + 24
+          );
+          ctx.lineTo(obs.width / 2, obs.height / 2 + floatOffset);
+          ctx.closePath();
+          ctx.fill();
+
+          var rGrad = ctx.createRadialGradient(
+            obs.width / 2, obs.height / 2 + floatOffset, 1,
+            obs.width / 2, obs.height / 2 + floatOffset, obs.width / 1.5
+          );
+          rGrad.addColorStop(0, "#ffffff");
+          rGrad.addColorStop(0.3, "rgba(207, 250, 254, 0.95)"); 
+          rGrad.addColorStop(0.7, "rgba(6, 182, 212, 0.8)"); 
+          rGrad.addColorStop(1, "rgba(0,0,0,0)");
+          
+          ctx.fillStyle = rGrad;
+          ctx.beginPath();
+          ctx.arc(obs.width / 2, obs.height / 2 + floatOffset, obs.width / 1.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = "#083344"; 
+          ctx.beginPath();
+          ctx.arc(obs.width / 2 - 4, obs.height / 2 - 1 + floatOffset, 2.8, 0, Math.PI, true);
+          ctx.arc(obs.width / 2 + 4, obs.height / 2 - 1 + floatOffset, 2.8, 0, Math.PI, true);
+          ctx.fill();
+
+          ctx.fillStyle = "#ef4444";
+          ctx.fillRect(obs.width / 2 - 4, obs.height / 2 - 2 + floatOffset, 1.5, 1.5);
+          ctx.fillRect(obs.width / 2 + 2, obs.height / 2 - 2 + floatOffset, 1.5, 1.5);
+
+          ctx.fillStyle = "#0c0a0f";
+          ctx.beginPath();
+          ctx.ellipse(obs.width / 2, obs.height / 2 + 4 + floatOffset, 2.2, 4.5, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.shadowBlur = 0;
+        }
+
+        ctx.restore();
+      });
+    }
+
+    function drawSpirits() {
+      spirits.forEach(function(sp) {
+        if (sp.collected) return;
+        var b = Math.sin(sp.pulse) * 3.5;
+        
+        ctx.save();
+        ctx.translate(sp.x, sp.y + b);
+
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = "rgba(253, 224, 71, 0.8)";
+
+        var grad = ctx.createRadialGradient(0, 0, 1, 0, 0, 14);
+        grad.addColorStop(0, "rgba(255, 255, 255, 1.0)");
+        grad.addColorStop(0.3, "rgba(253, 224, 71, 0.95)"); 
+        grad.addColorStop(0.7, "rgba(234, 179, 8, 0.45)");
+        grad.addColorStop(1, "rgba(0,0,0,0)");
+        
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, 14, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      });
+    }
+
+    function drawParticles() {
+      particles.forEach(function(p) {
+        ctx.save();
+        ctx.globalAlpha = p.life;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = p.color;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+
+    function drawRunner() {
+      ctx.save();
+      ctx.translate(runner.x + runner.width / 2, runner.y + runner.height / 2);
+      ctx.rotate(runner.rotation);
+
+      const halfW = runner.width / 2;
+      const halfH = runner.height / 2;
+      const cycle = Math.floor(runner.animFrame) % 4;
+
+      ctx.fillStyle = "#1e293b"; 
+      ctx.fillRect(-halfW, -halfH + 8, runner.width, runner.height - 14);
+
+      ctx.fillStyle = "#991b1b";
+      ctx.fillRect(-halfW - 3, -halfH + 6, runner.width + 2, 5);
+      if (runner.isGrounded) {
+        if (cycle === 0 || cycle === 2) {
+          ctx.fillRect(-halfW - 7, -halfH + 8, 5, 3);
+        } else {
+          ctx.fillRect(-halfW - 9, -halfH + 7, 7, 3);
+        }
+      } else {
+        ctx.fillRect(-halfW - 5, -halfH + 3, 5, 4);
+      }
+
+      ctx.fillStyle = "#fecdd3"; 
+      ctx.beginPath();
+      ctx.arc(2, -halfH + 3, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#090d16";
+      ctx.beginPath();
+      ctx.arc(2, -halfH + 1, 6.5, Math.PI, 0);
+      ctx.fill();
+      ctx.fillRect(-4, -halfH - 2, 8, 3); 
+
+      ctx.fillStyle = "#000";
+      ctx.fillRect(4, -halfH + 2, 2, 2);
+
+      ctx.fillStyle = "#0f172a";
+      if (runner.isGrounded) {
+        if (cycle === 0) {
+          ctx.fillRect(-halfW + 3, halfH - 6, 4, 6);
+          ctx.fillRect(halfW - 7, halfH - 6, 4, 6);
+        } 
+        else if (cycle === 1) {
+          ctx.fillRect(-halfW, halfH - 6, 5, 4);
+          ctx.fillRect(halfW - 5, halfH - 4, 4, 4);
+        } 
+        else if (cycle === 2) {
+          ctx.fillRect(-halfW + 2, halfH - 6, 4, 6);
+          ctx.fillRect(halfW - 6, halfH - 6, 4, 6);
+        } 
+        else {
+          ctx.fillRect(-halfW + 4, halfH - 4, 4, 4);
+          ctx.fillRect(halfW - 2, halfH - 6, 4, 5);
+        }
+      } else {
+        ctx.fillRect(-halfW + 1, halfH - 8, 4, 5);
+        ctx.fillRect(halfW - 5, halfH - 4, 4, 4);
+      }
+
+      ctx.fillStyle = "#94a3b8";
+      ctx.fillRect(halfW - 2, 2, 7, 3);
+      ctx.fillStyle = "#eab308";
+      ctx.fillRect(halfW + 5, 1, 2, 5);
+
+      ctx.restore();
+    }
+
+    // 中間発光ゴールドによる現在スコア
+    function drawRunningScore() {
+      if (gameState !== "playing") return;
+
+      ctx.save();
+      var textX = runner.x + runner.width + 12;
+      var textY = runner.y - 12;
+
+      var sizeScale = 1.0;
+      if (scorePopTime > 0) {
+        sizeScale = 1.0 + (scorePopTime / 15) * 0.3; 
+      }
+
+      ctx.shadowBlur = 4;
+      ctx.shadowColor = "#f59e0b"; 
+
+      ctx.textAlign = "left";
+      ctx.font = "bold " + Math.floor(19 * sizeScale) + "px 'DotGothic16', sans-serif";
+
+      // 輪郭黒フチ
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 3.5;
+      ctx.strokeText(Math.floor(gameScore), textX, textY);
+
+      if (scorePopTime > 0) {
+        ctx.fillStyle = "#ffffff"; 
+      } else {
+        ctx.fillStyle = "#facc15"; 
+      }
+
+      ctx.fillText(Math.floor(gameScore), textX, textY);
+      
+      // スピリット獲得時の「+100」ポップアップ
+      if (scorePopTime > 0) {
+        ctx.font = "bold " + Math.floor(14 * sizeScale) + "px 'DotGothic16', sans-serif";
+        ctx.shadowColor = "#10b981"; 
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3;
+        ctx.strokeText("+100", textX, textY - 21);
+        
+        ctx.fillStyle = "#34d399"; 
+        ctx.fillText("+100", textX, textY - 21);
+      }
+
+      ctx.restore();
+    }
+
+    function drawFlashlightOverlay(cw, ch) {
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = cw;
+      tempCanvas.height = ch;
+      const tCtx = tempCanvas.getContext('2d');
+
+      tCtx.fillStyle = "rgba(4, 3, 7, 0.95)";
+      tCtx.fillRect(0, 0, cw, ch);
+
+      const lx = runner.x + runner.width + 4;
+      const ly = runner.y + runner.height / 2 + 3;
+
+      tCtx.save();
+      tCtx.globalCompositeOperation = 'destination-out';
+
+      const ambGrad = tCtx.createRadialGradient(lx, ly, 2, lx, ly, 45);
+      ambGrad.addColorStop(0, "rgba(255, 255, 255, 1.0)");
+      ambGrad.addColorStop(0.4, "rgba(255, 255, 255, 0.65)");
+      ambGrad.addColorStop(1, "rgba(255, 255, 255, 0.0)");
+      tCtx.fillStyle = ambGrad;
+      tCtx.beginPath();
+      tCtx.arc(lx, ly, 45, 0, Math.PI * 2);
+      tCtx.fill();
+
+      const range = 260; 
+      const beamAngle = 0; 
+      const fov = Math.PI / 3; 
+
+      const p1x = lx + Math.cos(beamAngle - fov / 2) * range;
+      const p1y = ly + Math.sin(beamAngle - fov / 2) * range;
+      const p2x = lx + Math.cos(beamAngle + fov / 2) * range;
+      const p2y = ly + Math.sin(beamAngle + fov / 2) * range;
+
+      const beamGrad = tCtx.createRadialGradient(lx, ly, 10, lx + range*0.7, ly, range);
+      beamGrad.addColorStop(0, "rgba(255, 255, 255, 1.0)");
+      beamGrad.addColorStop(0.4, "rgba(255, 255, 255, 0.8)");
+      beamGrad.addColorStop(0.8, "rgba(255, 255, 255, 0.15)");
+      beamGrad.addColorStop(1, "rgba(255, 255, 255, 0.0)");
+
+      tCtx.fillStyle = beamGrad;
+      tCtx.beginPath();
+      tCtx.moveTo(lx, ly);
+      tCtx.lineTo(p1x, p1y);
+      tCtx.arc(lx, ly, range, beamAngle - fov / 2, beamAngle + fov / 2, false);
+      tCtx.lineTo(lx, ly);
+      tCtx.closePath();
+      tCtx.fill();
+
+      tCtx.restore();
+
+      ctx.drawImage(tempCanvas, 0, 0);
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      const dustGrad = ctx.createRadialGradient(lx, ly, 10, lx + range * 0.5, ly, range);
+      dustGrad.addColorStop(0, "rgba(254, 240, 138, 0.12)"); 
+      dustGrad.addColorStop(0.6, "rgba(254, 240, 138, 0.04)");
+      dustGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = dustGrad;
+      ctx.beginPath();
+      ctx.moveTo(lx, ly);
+      ctx.arc(lx, ly, range, beamAngle - fov/2, beamAngle + fov/2, false);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+
+    // --- 画面遷移ハンドラー群 ---
+    btnReady.addEventListener("click", function() {
+      try {
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      } catch(e) {}
+
+      // 定期的な環境不協和音タイマー
+      setInterval(function() {
+        if (gameState === "playing" && Math.random() < 0.2) {
+          try {
+            playTone(55 + Math.random() * 30, 'triangle', 2.0, 0.1);
+          } catch(e) {}
+        }
+      }, 4000);
+
+      startGame();
+    });
+
+    btnRestart.addEventListener("click", function() {
+      startGame();
+    });
+
+    btnToLobby.addEventListener("click", function() {
+      showLobby();
+    });
+
+    // キャンバスリサイズ処理
+    function resizeCanvas() {
+      const parent = canvas.parentElement;
+      if (parent) {
+        canvas.width = parent.clientWidth;
+        canvas.height = parent.clientHeight;
+      }
+    }
+    window.addEventListener("resize", resizeCanvas);
+
+    // 画面ロード完了後に確実に描画キャンバスをリサイズ
+    window.addEventListener('load', function() {
+      resizeCanvas();
+    });
+
+  </script>
+</body>
+</html>
